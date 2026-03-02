@@ -11,7 +11,7 @@ export function AccordionItem({ title, content, isOpen, onClick }) {
         <h3 className="text-left font-semibold text-gray-900">{title}</h3>
         <ChevronDown
           size={20}
-          className={`text-[#0F172A] transition-transform duration-300 flex-shrink-0 ${
+          className={`text-green-500 transition-transform duration-300 flex-shrink-0 ${
             isOpen ? 'rotate-180' : ''
           }`}
         />
@@ -29,7 +29,7 @@ export function Accordion({ items, defaultOpen = 0 }) {
   const [openIndex, setOpenIndex] = useState(defaultOpen);
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+    <div className="bg-gray-100 rounded-xl shadow-sm border border-gray-100">
       {items.map((item, index) => (
         <AccordionItem
           key={index}

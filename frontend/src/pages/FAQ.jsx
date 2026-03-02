@@ -125,8 +125,8 @@ export default function FAQ() {
   };
 
   return (
-    <div className="min-h-screen bg-cover bg-right bg-no-repeat relative">
-      <div className="absolute inset-0 bg-gray-200 bg-gradient-to-r from-black/60 via-black/30 to-transparent"></div>
+    <div className="min-h-screen bg-cover bg-white bg-right bg-no-repeat relative">
+      {/* <div className="absolute inset-0 bg-gray-200 bg-gradient-to-r from-black/60 via-black/30 to-transparent"></div> */}
 
       <div className="relative max-w-4xl mx-auto px-6 py-16">
         <div className="text-center mb-12">
@@ -141,14 +141,14 @@ export default function FAQ() {
           </p>
         </div>
 
-        <div className="mb-12 relative">
-          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+        <div className="mb-12 relative "> 
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 " size={20} />
           <input
             type="text"
             placeholder="Search FAQs..."
             value={searchTerm}
             onChange={(e) => handleSearch(e.target.value)}
-            className="w-full pl-12 pr-6 py-3 bg-white text-gray-900 placeholder-gray-400 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0F172A] focus:border-transparent shadow-sm"
+            className="w-full pl-12 pr-6 py-3 bg-gray-100 text-gray-900 placeholder-gray-400 border border-gray-200 rounded-lg focus:outline-none focus:border-green-500/70 border-2 focus:ring-0  shadow-sm"
           />
         </div>
 
@@ -156,7 +156,7 @@ export default function FAQ() {
           <div className="space-y-10 mb-16">
             {Object.entries(filteredData).map(([category, items]) => (
               <div key={category}>
-                <h2 className="text-2xl font-bold text-white mb-4 pb-2 border-b-2 border-white/30">
+                <h2 className="text-2xl font-bold text-[#0F172A] mb-4 pb-2 border-b-2 border-green-500/30">
                   {category}
                 </h2>
                 <Accordion items={items} />
@@ -172,7 +172,7 @@ export default function FAQ() {
           </div>
         )}
 
-        <div className="bg-gradient-to-r from-[#0F172A] to-[#1a2540] rounded-xl p-8 text-white text-center">
+        <div className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:from-emerald-600 hover:to-teal-700 transition-all duration-300 shadow-md hover:shadow-lg rounded-xl p-8 text-white text-center">
           <Mail size={40} className="mx-auto mb-4 opacity-80" />
           <h3 className="text-2xl font-bold mb-2">Still have questions?</h3>
           <p className="text-blue-100 mb-6 max-w-xl mx-auto">

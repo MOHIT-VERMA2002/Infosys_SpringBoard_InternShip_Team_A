@@ -19,6 +19,7 @@ import Features from "./pages/Features";
 import About from "./pages/About";
 import Payment from "./pages/Payment";
 import PaymentHistory from "./pages/PaymentHistory";
+import ParkingRates from './pages/ParkingRates';
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
@@ -57,6 +58,7 @@ function App() {
           <Route path="/about" element={<About />} />
           <Route path="/payment" element={<Payment />} />
           <Route path="/payment-history" element={<PaymentHistory />} />
+          <Route path="/parking-rates" element={<ParkingRates />} />
 
         </Route>
 

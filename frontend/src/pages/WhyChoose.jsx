@@ -38,10 +38,10 @@ export default function WhyChoose() {
     },
   ];
   return (
-  <div className="relative min-h-screen bg-gray-200 py-20 px-6">
+  <div className="relative h-screen bg-white w-full overflow-hidden  py-20 px-6">
 
     {/* Overlay */}
-    <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-black/20 to-transparent"></div>
+    {/* <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-black/20 to-transparent"></div> */}
 
     {/* Content */}
     <div className="relative z-10 max-w-6xl mx-auto">
@@ -50,7 +50,7 @@ export default function WhyChoose() {
         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-3">
           Why Choose ParkEase?
         </h1>
-        <p className="text-base sm:text-lg text-customGray max-w-2xl mx-auto">
+        <p className="text-base sm:text-lg text-mist-500 max-w-2xl mx-auto">
           Experience seamless parking with our comprehensive suite of features
         </p>
       </div>

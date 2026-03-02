@@ -20,7 +20,7 @@ export default function FeatureCard({
 
         {/* Icon */}
         <div className="flex-shrink-0">
-          <div className="flex items-center justify-center w-11 h-11 rounded-lg bg-[#0F172A]">
+          <div className="flex items-center justify-center w-11 h-11 rounded-lg bg-green-500">
             <Icon className="w-5 h-5 text-white" />
           </div>
         </div>

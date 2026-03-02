@@ -20,7 +20,7 @@ const MainLayout = () => {
         <Navbar />
 
         {/* Page Content */}
-        <main className="flex-grow pt-24 px-6">
+        <main className="flex-grow pt-20 ">
           <Outlet />
         </main>
 
