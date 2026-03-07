@@ -20,6 +20,8 @@ import About from "./pages/About";
 import Payment from "./pages/Payment";
 import PaymentHistory from "./pages/PaymentHistory";
 import ParkingRates from './pages/ParkingRates';
+import Services from "./pages/Services";
+import TopReviews from "./pages/TopReviews";
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
@@ -59,6 +61,8 @@ function App() {
           <Route path="/payment" element={<Payment />} />
           <Route path="/payment-history" element={<PaymentHistory />} />
           <Route path="/parking-rates" element={<ParkingRates />} />
+          <Route path="/services" element={<Services />} />
+          <Route path="/top-reviews" element={<TopReviews />} />
 
         </Route>
 

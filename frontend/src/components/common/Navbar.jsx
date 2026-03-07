@@ -10,8 +10,8 @@ import {
 const Navbar = () => {
   const isLoggedIn = true;
 
-  const [open, setOpen] = useState(false);        // profile dropdown
-  const [mobileMenu, setMobileMenu] = useState(false); // hamburger menu
+  const [open, setOpen] = useState(false);
+  const [mobileMenu, setMobileMenu] = useState(false);
 
   const navigate = useNavigate();
   const dropdownRef = useRef(null);
@@ -19,6 +19,7 @@ const Navbar = () => {
   const navItems = [
     { name: "Home", path: "/" },
     { name: "Features", path: "/features" },
+    { name: "Services", path: "/services" }, 
     { name: "About Us", path: "/about" },
     { name: "Parking Options", path: "/parking-rates" },
     { name: "Location", path: "/parking-status" },
@@ -30,7 +31,6 @@ const Navbar = () => {
     navigate("/login");
   };
 
-  // Close profile dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -46,10 +46,9 @@ const Navbar = () => {
     <nav className="fixed top-0 left-0 w-full z-50 backdrop-blur-md bg-black/40">
       <div className="relative max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
 
-        {/* LEFT SPACER (for centering on mobile) */}
         <div className="md:hidden w-10"></div>
 
-        {/* LOGO (CENTER ON MOBILE, LEFT ON DESKTOP) */}
+        {/* LOGO */}
         <Link
           to="/"
           className="absolute left-1/2 -translate-x-1/2 md:static md:translate-x-0
@@ -64,7 +63,7 @@ const Navbar = () => {
           <span className="text-xl font-bold">ParkEase</span>
         </Link>
 
-        {/* DESKTOP NAV LINKS */}
+        {/* DESKTOP NAV */}
         <ul className="hidden md:flex gap-8 text-white font-medium">
           {navItems.map((item) => (
             <li key={item.name}>
@@ -82,12 +81,8 @@ const Navbar = () => {
           ))}
         </ul>
 
-        {/* RIGHT SIDE ACTIONS */}
-        <div
-          className="flex items-center gap-4 relative"
-          ref={dropdownRef}
-        >
-          {/* PROFILE ICON */}
+        {/* RIGHT SIDE */}
+        <div className="flex items-center gap-4 relative" ref={dropdownRef}>
           {isLoggedIn && (
             <button
               onClick={() => setOpen((prev) => !prev)}
@@ -98,7 +93,6 @@ const Navbar = () => {
             </button>
           )}
 
-          {/* HAMBURGER ICON (MOBILE ONLY) */}
           <button
             className="md:hidden text-white"
             onClick={() => setMobileMenu((prev) => !prev)}
@@ -106,7 +100,7 @@ const Navbar = () => {
             {mobileMenu ? <FaTimes size={24} /> : <FaBars size={24} />}
           </button>
 
-          {/* PROFILE DROPDOWN (DESKTOP) */}
+          {/* PROFILE DROPDOWN */}
           {open && (
             <div className="absolute right-0 top-12 w-60 bg-white rounded-xl 
                             shadow-lg text-gray-800 border z-50">
@@ -144,8 +138,7 @@ const Navbar = () => {
 
               <button
                 onClick={handleLogout}
-                className="w-full text-left px-4 py-3 
-                           text-red-600 hover:bg-red-50"
+                className="w-full text-left px-4 py-3 text-red-600 hover:bg-red-50"
               >
                 🚪 Logout
               </button>
@@ -154,7 +147,7 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* MOBILE MENU PANEL */}
+      {/* MOBILE MENU */}
       {mobileMenu && (
         <div className="md:hidden bg-black/90 text-white px-6 py-6 space-y-4">
           {navItems.map((item) => (
@@ -168,7 +161,6 @@ const Navbar = () => {
             </NavLink>
           ))}
 
-          {/* MOBILE PROFILE ACTIONS */}
           {isLoggedIn && (
             <>
               <NavLink
