@@ -1,18 +1,12 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import {
-  Search,
-  MapPin,
-  ChevronDown,
-  ChevronUp,
-  X,
-  Calendar,
-  Clock,
-} from "lucide-react";
+import { Search, MapPin, ChevronDown, ChevronUp, X, Zap } from "lucide-react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { ZoomControl } from "react-leaflet";
+
+
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl:
@@ -81,7 +75,8 @@ const parkingData = [
     dayRate: 180,
     earlyBirdRate: 150,
     weekendRate: 200,
-    position: [21.1466, 79.0882],
+    availableSpots: 45,
+    position: [21.1466, 79.0882]
   },
   {
     id: 2,
@@ -92,7 +87,8 @@ const parkingData = [
     dayRate: 200,
     earlyBirdRate: 160,
     weekendRate: 220,
-    position: [21.1389, 79.0712],
+    availableSpots: 32,
+    position: [21.1389, 79.0712]
   },
   {
     id: 3,
@@ -103,7 +99,8 @@ const parkingData = [
     dayRate: 240,
     earlyBirdRate: 200,
     weekendRate: 260,
-    position: [21.1255, 79.0925],
+    availableSpots: 28,
+    position: [21.1255, 79.0925]
   },
   {
     id: 4,
@@ -114,7 +111,8 @@ const parkingData = [
     dayRate: 150,
     earlyBirdRate: 120,
     weekendRate: 170,
-    position: [21.107, 79.045],
+    availableSpots: 50,
+    position: [21.1070, 79.0450]
   },
   {
     id: 5,
@@ -125,7 +123,8 @@ const parkingData = [
     dayRate: 270,
     earlyBirdRate: 220,
     weekendRate: 290,
-    position: [21.1594, 79.0869],
+    availableSpots: 22,
+    position: [21.1594, 79.0869]
   },
   {
     id: 6,
@@ -136,28 +135,43 @@ const parkingData = [
     dayRate: 180,
     earlyBirdRate: 150,
     weekendRate: 200,
-    position: [21.1529, 79.082],
+    availableSpots: 38,
+    position: [21.1529, 79.0820]
   },
 ];
+
+const EV_CHARGING_HOURLY = 15;
+const EV_CHARGING_MONTHLY = 500;
 
 const BookParking = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [mode, setMode] = useState("HOURLY");
-  const [expandedCard, setExpandedCard] = useState(null);
+  const [expandedCards, setExpandedCards] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
+  const [userDetails, setUserDetails] = useState({
+    name: "",
+    phone: "",
+    vehicle: "",
+    address: "",
+  });
+  const [includeEVCharging, setIncludeEVCharging] = useState(false);
 
   const filteredParking = useMemo(() => {
     if (!search.trim()) return parkingData;
     return parkingData.filter((p) =>
-      `${p.name} ${p.address}`.toLowerCase().includes(search.toLowerCase()),
+      `${p.name} ${p.address}`.toLowerCase().includes(search.toLowerCase())
     );
   }, [search]);
 
-  const handleDetailsClick = (parkingId) => {
-    setExpandedCard(expandedCard === parkingId ? null : parkingId);
-  };
+const handleDetailsClick = (parkingId) => {
+  setExpandedCards((prev) =>
+    prev.includes(parkingId)
+      ? prev.filter((id) => id !== parkingId) // close
+      : [...prev, parkingId] // open
+  );
+};
 
   const handleBookParking = (parking) => {
     setSelectedBooking(parking);
@@ -167,14 +181,49 @@ const BookParking = () => {
   const handleCloseModal = () => {
     setShowModal(false);
     setSelectedBooking(null);
+    setIncludeEVCharging(false);
+  };
+
+  const handleUserDetailsChange = (field, value) => {
+    setUserDetails((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const getBasePrice = () => {
+    return mode === "HOURLY" ? selectedBooking.hourly : selectedBooking.monthly;
+  };
+
+  const getEVChargingPrice = () => {
+    return mode === "HOURLY" ? EV_CHARGING_HOURLY : EV_CHARGING_MONTHLY;
+  };
+
+  const getTotalPrice = () => {
+    const basePrice = getBasePrice();
+    const evCharge = includeEVCharging ? getEVChargingPrice() : 0;
+    return basePrice + evCharge;
   };
 
   const handleContinueToPayment = () => {
+    if (
+      !userDetails.name.trim() ||
+      !userDetails.phone.trim() ||
+      !userDetails.vehicle.trim() ||
+      !userDetails.address.trim()
+    ) {
+      alert("Please fill in all required fields");
+      return;
+    }
+
     navigate("/payment", {
       state: {
         booking: selectedBooking,
         mode: mode,
-      },
+        userDetails: userDetails,
+        evCharging: includeEVCharging,
+        totalPrice: getTotalPrice(),
+      }
     });
   };
 
@@ -193,10 +242,7 @@ const BookParking = () => {
           <div className="border-3 border-blue-400 rounded-xl shadow-md">
             <div className="bg-white rounded-lg flex items-stretch overflow-hidden">
               <div className="relative flex-1">
-                <Search
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-                  size={20}
-                />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                 <input
                   type="text"
                   placeholder="Search address"
@@ -209,7 +255,7 @@ const BookParking = () => {
               <button
                 onClick={() => {
                   setMode("HOURLY");
-                  setExpandedCard(null);
+                  setExpandedCards([]);
                 }}
                 className={`px-6 py-3 text-sm font-semibold transition-all ${
                   mode === "HOURLY"
@@ -222,7 +268,7 @@ const BookParking = () => {
               <button
                 onClick={() => {
                   setMode("MONTHLY");
-                  setExpandedCard(null);
+                  setExpandedCards([]);
                 }}
                 className={`px-6 py-3 text-sm font-semibold transition-all ${
                   mode === "MONTHLY"
@@ -271,17 +317,17 @@ const BookParking = () => {
         </MapContainer>
       </div>
 
-      <div className="w-[400px] bg-white shadow-xl overflow-y-auto h-full">
-        <div className="p-4 bg-gray-50 border-b sticky top-0 z-10">
+      <div className="w-[400px] bg-white shadow-xl overflow-y-auto flex flex-col">
+        <div className="p-4 bg-gray-50 border-b sticky top-0 z-10 flex-shrink-0">
           <h2 className="text-lg font-bold text-gray-900">
             Available Parking ({filteredParking.length})
           </h2>
           <p className="text-xs text-gray-600 mt-1">Nagpur, Maharashtra</p>
         </div>
 
-        <div className="space-y-0">
+        <div className="space-y-0 flex-1 overflow-y-auto">
           {filteredParking.map((parking) => {
-            const isExpanded = expandedCard === parking.id;
+          const isExpanded = expandedCards.includes(parking.id);
 
             return (
               <div
@@ -304,15 +350,10 @@ const BookParking = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <p className="text-xl font-bold text-gray-900">
-                        ₹{getCurrentPrice(parking)}
-                        <span className="text-sm font-normal text-gray-500">
-                          {getPriceLabel()}
-                        </span>
-                      </p>
-                    </div>
+                  <div className="mb-3">
+                    <p className="text-xl font-bold text-gray-900">
+                      ₹{getCurrentPrice(parking)}<span className="text-sm font-normal text-gray-500">{getPriceLabel()}</span>
+                    </p>
                   </div>
 
                   {isExpanded && (
@@ -321,56 +362,36 @@ const BookParking = () => {
                         <>
                           <div className="flex justify-between text-sm">
                             <span className="text-gray-600">Day rate:</span>
-                            <span className="font-semibold text-gray-900">
-                              ₹{parking.dayRate}
-                            </span>
+                            <span className="font-semibold text-gray-900">₹{parking.dayRate}</span>
                           </div>
                           <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">
-                              Early bird rate:
-                            </span>
-                            <span className="font-semibold text-gray-900">
-                              ₹{parking.earlyBirdRate}
-                            </span>
+                            <span className="text-gray-600">Early bird rate:</span>
+                            <span className="font-semibold text-gray-900">₹{parking.earlyBirdRate}</span>
                           </div>
                           <div className="flex justify-between text-sm">
                             <span className="text-gray-600">Weekend rate:</span>
-                            <span className="font-semibold text-gray-900">
-                              ₹{parking.weekendRate}/hour
-                            </span>
+                            <span className="font-semibold text-gray-900">₹{parking.weekendRate}/hour</span>
                           </div>
                         </>
                       ) : (
                         <>
                           <div className="flex justify-between text-sm">
                             <span className="text-gray-600">Monthly rate:</span>
-                            <span className="font-semibold text-gray-900">
-                              ₹{parking.monthly}
-                            </span>
+                            <span className="font-semibold text-gray-900">₹{parking.monthly}</span>
                           </div>
                           <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">
-                              Daily equivalent:
-                            </span>
-                            <span className="font-semibold text-gray-900">
-                              ₹{Math.round(parking.monthly / 30)}/day
-                            </span>
+                            <span className="text-gray-600">Daily equivalent:</span>
+                            <span className="font-semibold text-gray-900">₹{Math.round(parking.monthly / 30)}/day</span>
                           </div>
                           <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">
-                              Billing cycle:
-                            </span>
-                            <span className="font-semibold text-gray-900">
-                              Monthly (30 days)
-                            </span>
+                            <span className="text-gray-600">Billing cycle:</span>
+                            <span className="font-semibold text-gray-900">Monthly (30 days)</span>
                           </div>
                         </>
                       )}
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-600">Location:</span>
-                        <span className="font-semibold text-gray-900">
-                          Nagpur
-                        </span>
+                        <span className="font-semibold text-gray-900">Nagpur</span>
                       </div>
                       <div className="mt-3 pt-3 border-t border-gray-200">
                         <p className="text-xs text-gray-500">
@@ -416,13 +437,9 @@ const BookParking = () => {
 
       {showModal && selectedBooking && (
         <div className="fixed inset-0 z-[3000] flex center justify-center bg-black/60 backdrop-blur-sm p-10 overflow-y-auto flex-1">
-          {/* Modal Box */}
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] flex flex-col animate-fadeIn">
-            {/* Header */}
             <div className="p-6 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
-              <h2 className="text-2xl font-bold text-gray-900">
-                Confirm Booking
-              </h2>
+              <h2 className="text-2xl font-bold text-gray-900">Confirm Booking</h2>
               <button
                 onClick={handleCloseModal}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -431,16 +448,14 @@ const BookParking = () => {
               </button>
             </div>
 
-            {/* Body */}
             <div className="p-6 space-y-6 overflow-y-auto flex-1">
-              {/* Parking Info */}
-              <div className="bg-gray-50 rounded-xl p-4">
+              <div className="bg-gray-50 rounded-lg p-4">
                 <div className="flex items-start gap-3">
-                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                    <MapPin className="text-green-600" size={22} />
+                  <div className="flex-shrink-0 w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                    <MapPin className="text-green-600" size={24} />
                   </div>
-                  <div>
-                    <h3 className="font-bold text-gray-900 text-lg">
+                  <div className="flex-1">
+                    <h3 className="font-bold text-gray-900 text-lg mb-1">
                       {selectedBooking.name}
                     </h3>
                     <p className="text-sm text-gray-600">
@@ -450,70 +465,112 @@ const BookParking = () => {
                 </div>
               </div>
 
-              {/* Booking Summary */}
               <div className="space-y-4">
-                {/* Selected Plan */}
-                <div className="flex justify-between items-center py-3 border-b border-gray-200">
-                  <span className="text-gray-600 font-medium">
-                    Selected Plan
-                  </span>
-                  <span
-                    className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                      mode === "HOURLY"
-                        ? "bg-green-100 text-green-700"
-                        : "bg-blue-100 text-blue-700"
-                    }`}
-                  >
+                <div className="flex items-center justify-between py-3 border-b border-gray-200">
+                  <span className="text-gray-600 font-medium">Selected Plan</span>
+                  <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                    mode === "HOURLY"
+                      ? "bg-green-100 text-green-700"
+                      : "bg-blue-100 text-blue-700"
+                  }`}>
                     {mode === "HOURLY" ? "Hourly Parking" : "Monthly Parking"}
                   </span>
                 </div>
 
-                {/* Price */}
-                <div className="flex justify-between items-center py-3 border-b border-gray-200">
-                  <span className="text-gray-600 font-medium">Price</span>
-                  <span className="text-2xl font-bold text-gray-900">
-                    ₹{getCurrentPrice(selectedBooking)}
-                    <span className="text-sm font-normal text-gray-500">
-                      {getPriceLabel()}
-                    </span>
+                <div className="flex items-center justify-between py-3 border-b border-gray-200">
+                  <span className="text-gray-600 font-medium">Base Price</span>
+                  <span className="text-lg font-bold text-gray-900">
+                    ₹{getBasePrice()}
+                    <span className="text-sm font-normal text-gray-500">{getPriceLabel()}</span>
                   </span>
                 </div>
 
-                {/* Name */}
-                <div className="flex justify-between items-center py-3 border-b border-gray-200">
-                  <span className="text-gray-600 font-medium">Name</span>
-                  <span className="font-semibold text-gray-900">
-                    Rahul Singh
+                <div className="space-y-3 py-3 border-b border-gray-200">
+                  <div className="flex items-center gap-3">
+                    <label className="flex items-center gap-3 flex-1 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={includeEVCharging}
+                        onChange={(e) => setIncludeEVCharging(e.target.checked)}
+                        className="w-4 h-4 rounded border-gray-300 text-green-500 focus:ring-green-500"
+                      />
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                          <Zap size={16} className="text-amber-500" />
+                          EV Charging
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          +₹{getEVChargingPrice()}{mode === "HOURLY" ? "/hour" : "/month"}
+                        </p>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between py-3 border-b border-gray-200">
+                  <span className="text-gray-600 font-medium">Total Price</span>
+                  <span className="text-2xl font-bold text-green-600">
+                    ₹{getTotalPrice()}
+                    <span className="text-sm font-normal text-gray-500">{getPriceLabel()}</span>
                   </span>
                 </div>
 
-                {/* Phone */}
-                <div className="flex justify-between items-center py-3 border-b border-gray-200">
-                  <span className="text-gray-600 font-medium">Phone</span>
-                  <span className="font-semibold text-gray-900">
-                    8888756789
-                  </span>
-                </div>
+                <div className="space-y-3 pt-2">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Full Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={userDetails.name}
+                      onChange={(e) => handleUserDetailsChange("name", e.target.value)}
+                      placeholder="Enter your full name"
+                      className="w-full px-4 py-2 bg-white text-black  border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                    />
+                  </div>
 
-                {/* Vehicle */}
-                <div className="flex justify-between items-center py-3 border-b border-gray-200">
-                  <span className="text-gray-600 font-medium">Vehicle No</span>
-                  <span className="font-semibold text-gray-900">
-                    MH 31 AB 1234
-                  </span>
-                </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Phone Number <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="tel"
+                      value={userDetails.phone}
+                      onChange={(e) => handleUserDetailsChange("phone", e.target.value)}
+                      placeholder="Enter your phone number"
+                      className="w-full px-4 py-2 bg-white text-black  border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                    />
+                  </div>
 
-                {/* Address */}
-                <div className="flex justify-between items-start py-3">
-                  <span className="text-gray-600 font-medium">Address</span>
-                  <span className="font-semibold text-gray-900 text-right max-w-[60%]">
-                    Nagpur, Maharashtra
-                  </span>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Vehicle Number <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={userDetails.vehicle}
+                      onChange={(e) => handleUserDetailsChange("vehicle", e.target.value)}
+                      placeholder="e.g., MH 01 AB 1234"
+                      className="w-full px-4 py-2 bg-white text-black  border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Address <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                      value={userDetails.address}
+                      onChange={(e) => handleUserDetailsChange("address", e.target.value)}
+                      placeholder="Enter your address"
+                      rows={2}
+                      className="w-full px-4 py-2 bg-white text-black  border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Footer Buttons */}
             <div className="p-6 bg-gray-50 rounded-b-2xl flex gap-3 flex-shrink-0">
               <button
                 onClick={handleCloseModal}
@@ -521,7 +578,6 @@ const BookParking = () => {
               >
                 Cancel
               </button>
-
               <button
                 onClick={handleContinueToPayment}
                 className="flex-1 px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold rounded-lg hover:shadow-lg transition-all"
@@ -535,5 +591,4 @@ const BookParking = () => {
     </div>
   );
 };
-
 export default BookParking;
