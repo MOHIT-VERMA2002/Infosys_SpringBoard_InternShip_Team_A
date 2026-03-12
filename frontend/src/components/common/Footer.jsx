@@ -22,7 +22,7 @@ const Footer = () => {
             <span className="bg-gradient-to-r from-green-400 to-emerald-500 bg-clip-text text-transparent">
               PARK
             </span>{" "}
-            <span className="text-white tracking-widest text-sm">SMART</span>
+            <span className="text-white tracking-widest text-sm">Ease</span>
           </h2>
 
           <p className="text-sm text-gray-400 leading-relaxed">

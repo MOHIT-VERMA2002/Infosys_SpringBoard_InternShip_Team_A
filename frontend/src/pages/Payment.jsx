@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { SiPaytm, SiPhonepe, SiAmazon } from "react-icons/si";
-import { FaCheckCircle } from "react-icons/fa";
+import { SiPaytm, SiPhonepe } from "react-icons/si";
+import { FaAmazon, FaCheckCircle } from "react-icons/fa";
 import jsPDF from "jspdf";
 
 const Payment = () => {
@@ -254,7 +254,7 @@ const Payment = () => {
                 onClick={() => setWallet("Amazon Pay")}
                 className="w-full flex items-center gap-3 border rounded-lg px-4 py-3 hover:bg-gray-50"
               >
-                <SiAmazon className="text-yellow-600 text-xl" /> Amazon Pay
+                <FaAmazon className="text-yellow-600 text-xl" /> Amazon Pay
               </button>
             </div>
           )}
