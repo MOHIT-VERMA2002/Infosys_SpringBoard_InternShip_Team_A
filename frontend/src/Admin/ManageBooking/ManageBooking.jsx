@@ -68,16 +68,6 @@ export default function ManageBookings() {
 
   const pendingBookings = bookings.filter(b=>b.status==="Pending");
 
-  /* TOP USERS */
-
-  const topUsers = Object.values(
-    bookings.reduce((acc,b)=>{
-      acc[b.user] = acc[b.user] || {name:b.user,count:0};
-      acc[b.user].count++;
-      return acc;
-    },{})
-  ).sort((a,b)=>b.count-a.count).slice(0,5);
-
   /* FILTER */
 
   let filteredBookings = bookings.filter((b) => {
@@ -201,27 +191,9 @@ export default function ManageBookings() {
 
         </Section>
 
-        {/* TOP USERS */}
-
-        <Section title="Top Users">
-
-          <div className="grid md:grid-cols-5 gap-4">
-
-            {topUsers.map(u=>(
-              <div key={u.name} className="bg-white border rounded-xl p-4 text-center shadow">
-                <p className="font-semibold">{u.name}</p>
-                <p className="text-blue-600 font-bold">{u.count}</p>
-                <p className="text-xs text-gray-400">Bookings</p>
-              </div>
-            ))}
-
-          </div>
-
-        </Section>
-
         {/* BOOKING TABLE */}
 
-        <Section title="All Bookings">
+       <Section title="Real-Time Parking Booking Activity">
 
           <div className="flex flex-wrap gap-3 mb-4">
 

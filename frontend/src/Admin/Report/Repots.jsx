@@ -14,8 +14,6 @@ export default function Reports() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedParking, setSelectedParking] = useState(null);
 
-  /* -------- USERS MASTER DATA -------- */
-
   const usersMaster = [
     {
       name: "Rahul",
@@ -32,8 +30,6 @@ export default function Reports() {
       vehicles: ["UP32CD5678"],
     }
   ];
-
-  /* -------- PARKING MASTER DATA -------- */
 
   const parkingMaster = [
     {
@@ -66,8 +62,11 @@ export default function Reports() {
 
     setBookings(data);
 
-  }, []);
+    /* default selection = first element */
+    setSelectedUser(users[0]);
+    setSelectedParking(parkings[0]);
 
+  }, []);
 
   const last7DaysData = useMemo(() => {
     const last7 = new Date();
@@ -84,9 +83,6 @@ export default function Reports() {
   const selectedUserData = usersMaster.find(u => u.name === selectedUser);
   const selectedParkingData = parkingMaster.find(p => p.name === selectedParking);
 
-
-  /* -------- PDF DOWNLOAD -------- */
-
   const downloadPDF = (rows, fileName, userDetails = null, parkingDetails = null) => {
 
     if (!rows.length) return;
@@ -97,8 +93,6 @@ export default function Reports() {
     doc.text(`${fileName} Report`, 14, 15);
 
     let startY = 25;
-
-    /* -------- USER DETAILS -------- */
 
     if (userDetails) {
 
@@ -112,8 +106,6 @@ export default function Reports() {
 
       startY += 40;
     }
-
-    /* -------- PARKING DETAILS -------- */
 
     if (parkingDetails) {
 
@@ -154,8 +146,6 @@ export default function Reports() {
         <Tab id="users" label="Users" {...{section,setSection}}/>
       </div>
 
-      {/* Search */}
-
       <div className="sticky top-0 z-10 bg-white pb-4">
         <div className="flex items-center gap-3 border rounded-xl px-4 py-3 shadow-sm">
           <Search size={18} className="text-gray-400"/>
@@ -168,8 +158,6 @@ export default function Reports() {
           <span className="text-xs text-gray-500">Last 7 days</span>
         </div>
       </div>
-
-      {/* PARKING REPORT */}
 
       {section === "parking" && (
         <>
@@ -194,8 +182,6 @@ export default function Reports() {
           )}
         </>
       )}
-
-      {/* USER REPORT */}
 
       {section === "users" && (
         <>
@@ -224,9 +210,6 @@ export default function Reports() {
     </AdminLayout>
   );
 }
-
-
-/* -------- UI COMPONENTS -------- */
 
 const DownloadBtn = ({ onClick }) => (
   <button
