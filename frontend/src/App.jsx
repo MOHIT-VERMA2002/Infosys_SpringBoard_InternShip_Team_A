@@ -24,6 +24,15 @@ import Services from "./pages/Services";
 import TopReviews from "./pages/TopReviews";
 import Contact from "./pages/Contact"
 
+
+import AdminProfile from "./Admin/profile/AdminProfile";
+import Dashboard from "./Admin/Dashboard/Dashboard";
+import ManageParking from "./Admin/ManageParking/ManageParking";
+import ManageUsers from "./Admin/ManageUser/MangeUser";
+import ManageBookings from "./Admin/ManageBooking/ManageBooking";
+import Reports from "./Admin/Report/Repots";
+
+
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
   return isAuthenticated ? children : <Navigate to="/login" />;
@@ -33,6 +42,13 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Admin Routes */}
+        <Route path="/admin" element={<Dashboard />} />
+        <Route path="/admin/parking" element={<ManageParking />} />
+        <Route path="/admin/users" element={<ManageUsers/>} />
+        <Route path="/admin/bookings" element={<ManageBookings />} />
+        <Route path="/admin/reports" element={<Reports />} />
+        <Route path="/admin/profile" element={<AdminProfile />} />
 
         {/* PUBLIC */}
         <Route path="/login" element={<Login />} />
