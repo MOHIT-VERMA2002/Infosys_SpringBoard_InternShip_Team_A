@@ -1,44 +1,31 @@
-import React from "react";
 import ReactApexChart from "react-apexcharts";
+import { useDashboard } from "@/context/DashboardContext";
+import ChartCard from "./ChartCard";
 
-export default function ParkingUsage(){
+export default function ParkingUsage() {
+  const { chartdata, loading, error } = useDashboard();
 
-const series=[{
-name:"Bookings",
-data:[120,90,140,60,110]
-}];
+  const series = [
+    {
+      name: "Bookings",
+      data: chartdata?.locationBookings || [],
+    },
+  ];
 
-const options={
-chart:{type:"bar",toolbar:{show:false}},
-colors:["#3b82f6"],
-plotOptions:{
-bar:{
-borderRadius:6,
-columnWidth:"45%"
-}
-},
-xaxis:{
-categories:["Phoenix","Airport","Mall","Metro","Stadium"]
-}
-};
+  const options = {
+    chart: { type: "bar", toolbar: { show: false } },
+    colors: ["#3b82f6"],
+    plotOptions: {
+      bar: { borderRadius: 6, columnWidth: "45%" },
+    },
+    xaxis: {
+      categories: chartdata?.locations || [],
+    },
+  };
 
-return(
-
-<div className="bg-white rounded-2xl shadow-lg p-6">
-
-<h2 className="text-lg font-semibold mb-4">
-Parking Usage
-</h2>
-
-<ReactApexChart
-options={options}
-series={series}
-type="bar"
-height={350}
-/>
-
-</div>
-
-);
-
+  return (
+    <ChartCard title="Parking Usage" loading={loading} error={error}>
+      <ReactApexChart options={options} series={series} type="bar" height={300} />
+    </ChartCard>
+  );
 }

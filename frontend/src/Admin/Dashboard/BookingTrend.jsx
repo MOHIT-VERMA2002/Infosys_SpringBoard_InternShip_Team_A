@@ -1,44 +1,30 @@
-import React from "react";
 import ReactApexChart from "react-apexcharts";
+import { useDashboard } from "@/context/DashboardContext";
+import ChartCard from "./ChartCard";
 
-export default function BookingTrend(){
 
-const series=[{
-name:"Bookings",
-data:[120,340,280,510,620,700,680]
-}];
+export default function BookingTrend() {
+  const { chartdata, loading, error } = useDashboard();
 
-const options={
-chart:{
-type:"line",
-toolbar:{show:false},
-animations:{enabled:true}
-},
-stroke:{curve:"smooth",width:3},
-colors:["#6366f1"],
-xaxis:{
-categories:["Jan","Feb","Mar","Apr","May","Jun","Jul"]
-},
-tooltip:{theme:"light"}
-};
+  const months = chartdata?.months?.map((m) => m || "N/A") || [];
 
-return(
+  const series = [
+    {
+      name: "Bookings",
+      data: chartdata?.monthlyBookings || [],
+    },
+  ];
 
-<div className="bg-white rounded-2xl shadow-lg p-6">
+  const options = {
+    chart: { type: "line", toolbar: { show: false } },
+    stroke: { curve: "smooth", width: 3 },
+    colors: ["#6366f1"],
+    xaxis: { categories: months },
+  };
 
-<h2 className="text-lg font-semibold mb-4">
-Booking Trend
-</h2>
-
-<ReactApexChart
-options={options}
-series={series}
-type="line"
-height={350}
-/>
-
-</div>
-
-);
-
+  return (
+    <ChartCard title="Booking Trend" loading={loading} error={error}>
+      <ReactApexChart options={options} series={series} type="line" height={300} />
+    </ChartCard>
+  );
 }

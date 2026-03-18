@@ -4,11 +4,14 @@ import "leaflet/dist/leaflet.css";
 import "./index.css";
 import App from "./App.jsx";
 import { AuthProvider } from "./context/AuthContext";
+import { DashboardProvider } from "./context/DashboardContext";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <AuthProvider>
-      <App />
-    </AuthProvider>
+  <DashboardProvider>
+    <App />
+  </DashboardProvider>
+</AuthProvider>
   </StrictMode>
 );

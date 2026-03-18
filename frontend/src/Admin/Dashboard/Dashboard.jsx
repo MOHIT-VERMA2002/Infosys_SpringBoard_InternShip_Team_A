@@ -5,109 +5,119 @@ import RevenueTrend from "./RevenueTrend";
 import ParkingUsage from "./ParkingUsage";
 import UserDistribution from "./UserDistribution";
 import HourlyHeat from "./HourlyHeat";
-
-
+import { useEffect, useState } from "react";
+import { getDashboardStats } from "@/api/adminApi";
 
 export default function Dashboard() {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-const stats=[
-{
-title:"Total Parking Locations",
-value:12,
-change:"+2",
-changeType:"up",
-description:"Added this month"
-},
-{
-title:"Total Slots",
-value:480,
-change:"+20",
-changeType:"up",
-description:"New slots added"
-},
-{
-title:"Available Slots",
-value:120,
-change:"+8%",
-changeType:"up",
-description:"Live availability"
-},
-{
-title:"Booked Slots",
-value:360,
-change:"-5%",
-changeType:"down",
-description:"Current occupancy"
-},
-{
-title:"Total Users",
-value:1540,
-change:"+12%",
-changeType:"up",
-description:"New registrations"
-},
-{
-title:"Total Bookings",
-value:3250,
-change:"+18%",
-changeType:"up",
-description:"Monthly bookings"
-},
-{
-title:"Revenue",
-value:"₹52,300",
-change:"+10%",
-changeType:"up",
-description:"Monthly earnings"
-},
-];
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await getDashboardStats();
+        setData(res);
+      } catch (err) {
+      } finally {
+        setLoading(false);
+      }
+    };
 
-return(
+    fetchData();
+  }, []);
 
-<AdminLayout>
+  const stats = data
+    ? [
+        {
+          title: "Total Parking Locations",
+          value: data.totalLocations,
+          change: "+0",
+          changeType: "up",
+          description: "Total locations",
+        },
+        {
+          title: "Total Slots",
+          value: data.totalSlots,
+          change: "+0",
+          changeType: "up",
+          description: "All slots",
+        },
+        {
+          title: "Available Slots",
+          value: data.availableSlots,
+          change: `${Math.round(
+            (data.availableSlots / data.totalSlots) * 100
+          )}%`,
+          changeType: "up",
+          description: "Live availability",
+        },
+        {
+          title: "Booked Slots",
+          value: data.bookedSlots,
+          change: `${Math.round(
+            (data.bookedSlots / data.totalSlots) * 100
+          )}%`,
+          changeType: "down",
+          description: "Current occupancy",
+        },
+        {
+          title: "Total Users",
+          value: data.totalUsers,
+          change: "+0",
+          changeType: "up",
+          description: "Registered users",
+        },
+        {
+          title: "Total Bookings",
+          value: data.totalBookings,
+          change: "+0",
+          changeType: "up",
+          description: "All bookings",
+        },
+        {
+          title: "Revenue",
+          value: `₹${data.revenue}`,
+          change: "+0",
+          changeType: "up",
+          description: "Total earnings",
+        },
+      ]
+    : [];
 
-<div className="space-y-10">
+  return (
+    <AdminLayout>
+      <div className="space-y-10">
 
-{/* KPI */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {loading
+            ? Array(4)
+                .fill(0)
+                .map((_, index) => (
+                  <div
+                    key={index}
+                    className="h-24 bg-gray-100 animate-pulse rounded-xl"
+                  />
+                ))
+            : stats.map((item, index) => (
+                <StatCard key={index} {...item} />
+              ))}
+        </div>
 
-<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+          <BookingTrend />
+          <RevenueTrend />
+        </div>
 
-{stats.map((item,index)=>(
-<StatCard key={index} {...item}/>
-))}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+          <ParkingUsage />
+          <UserDistribution />
+        </div>
 
-</div>
+        <div>
+          <HourlyHeat />
+        </div>
 
-{/* Charts Row 1 */}
-
-<div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-
-<BookingTrend/>
-<RevenueTrend/>
-
-</div>
-
-{/* Charts Row 2 */}
-
-<div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-
-<ParkingUsage/>
-<UserDistribution/>
-
-</div>
-
-{/* Charts Row 3 */}
-
-<div>
-
-<HourlyHeat/>
-
-</div>
-
-</div>
-
-</AdminLayout>
-
-);
-
+      </div>
+    </AdminLayout>
+  );
 }

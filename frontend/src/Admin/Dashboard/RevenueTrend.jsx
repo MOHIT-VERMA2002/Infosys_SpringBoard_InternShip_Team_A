@@ -1,48 +1,34 @@
-import React from "react";
 import ReactApexChart from "react-apexcharts";
+import { useDashboard } from "@/context/DashboardContext";
+import ChartCard from "./ChartCard";
 
-export default function RevenueTrend(){
+export default function RevenueTrend() {
+  const { chartdata, loading, error } = useDashboard();
 
-const series=[{
-name:"Revenue",
-data:[12000,19000,15000,23000,28000,32000,35000]
-}];
+  const months = chartdata?.months?.map((m) => m || "N/A") || [];
 
-const options={
-chart:{type:"area",toolbar:{show:false}},
-stroke:{curve:"smooth"},
-colors:["#22c55e"],
-dataLabels:{enabled:false},
-fill:{
-type:"gradient",
-gradient:{
-shadeIntensity:1,
-opacityFrom:0.7,
-opacityTo:0.2
-}
-},
-xaxis:{
-categories:["Jan","Feb","Mar","Apr","May","Jun","Jul"]
-}
-};
+  const series = [
+    {
+      name: "Revenue",
+      data: chartdata?.monthlyRevenue || [],
+    },
+  ];
 
-return(
+  const options = {
+    chart: { type: "area", toolbar: { show: false } },
+    stroke: { curve: "smooth" },
+    colors: ["#22c55e"],
+    dataLabels: { enabled: false },
+    fill: {
+      type: "gradient",
+      gradient: { opacityFrom: 0.7, opacityTo: 0.2 },
+    },
+    xaxis: { categories: months },
+  };
 
-<div className="bg-white rounded-2xl shadow-lg p-6">
-
-<h2 className="text-lg font-semibold mb-4">
-Revenue Growth
-</h2>
-
-<ReactApexChart
-options={options}
-series={series}
-type="area"
-height={350}
-/>
-
-</div>
-
-);
-
+  return (
+    <ChartCard title="Revenue Growth" loading={loading} error={error}>
+      <ReactApexChart options={options} series={series} type="area" height={300} />
+    </ChartCard>
+  );
 }

@@ -1,33 +1,25 @@
-import React from "react";
 import ReactApexChart from "react-apexcharts";
+import { useDashboard } from "@/context/DashboardContext";
+import ChartCard from "./ChartCard";
 
-export default function UserDistribution(){
+export default function UserDistribution() {
+  const { chartdata, loading, error } = useDashboard();
 
-const series=[45,30,25];
+  const series = [
+    chartdata?.dailyUsers || 0,
+    chartdata?.weeklyUsers || 0,
+    chartdata?.monthlyUsers || 0,
+  ];
 
-const options={
-labels:["Daily Users","Weekly Users","Monthly Users"],
-colors:["#6366f1","#22c55e","#f59e0b"],
-legend:{position:"bottom"}
-};
+  const options = {
+    labels: ["Daily", "Weekly", "Monthly"],
+    colors: ["#6366f1", "#22c55e", "#f59e0b"],
+    legend: { position: "bottom" },
+  };
 
-return(
-
-<div className="bg-white rounded-2xl shadow-lg p-6">
-
-<h2 className="text-lg font-semibold mb-4">
-User Activity
-</h2>
-
-<ReactApexChart
-options={options}
-series={series}
-type="donut"
-height={350}
-/>
-
-</div>
-
-);
-
+  return (
+    <ChartCard title="User Activity" loading={loading} error={error}>
+      <ReactApexChart options={options} series={series} type="donut" height={300} />
+    </ChartCard>
+  );
 }
