@@ -40,6 +40,7 @@ export const getDashboard = async () => {
 export const createParking = async (data) => {
   try {
     const res = await api.post("/admin/parking", data);
+    console.log(data);
      console.log(res.data);
     return res.data;
   } catch (error) {

@@ -12,8 +12,12 @@ import {
 
 import { Label } from "@/components/ui/label";
 import Input from "@/components/ui/Input";
+import { createParking } from "@/api/adminApi";
 
 export default function ParkingRegistrationForm() {
+
+  // ✅ NEW (Dialog control)
+  const [open, setOpen] = useState(false);
 
   const [parkingType, setParkingType] = useState("NORMAL");
   const [floors, setFloors] = useState(0);
@@ -23,6 +27,7 @@ export default function ParkingRegistrationForm() {
     parkingName: "",
     address: "",
     city: "",
+    phone: "",
     pincode: "",
     price: "",
     openTime: "",
@@ -33,7 +38,6 @@ export default function ParkingRegistrationForm() {
   const [normalSlots, setNormalSlots] = useState({
     prefix: "",
     total: "",
-    occupied: 0,
     evStations: ""
   });
 
@@ -41,7 +45,6 @@ export default function ParkingRegistrationForm() {
 
   const handleChange = (e) =>
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
-
 
   const handleFloorCount = (count) => {
     const num = Number(count);
@@ -52,12 +55,10 @@ export default function ParkingRegistrationForm() {
         floorName: "",
         prefix: "",
         total: "",
-        occupied: 0,
         evStations: ""
       }))
     );
   };
-
 
   const updateFloor = (index, field, value) => {
     const updated = [...floorData];
@@ -65,26 +66,95 @@ export default function ParkingRegistrationForm() {
     setFloorData(updated);
   };
 
+  // ✅ RESET FUNCTION
+  const resetForm = () => {
+    setFormData({
+      parkingName: "",
+      address: "",
+      city: "",
+      phone: "",
+      pincode: "",
+      price: "",
+      openTime: "",
+      closeTime: "",
+      evPrice: ""
+    });
 
-  const handleSubmit = (e) => {
+    setNormalSlots({
+      prefix: "",
+      total: "",
+      evStations: ""
+    });
+
+    setFloorData([]);
+    setFloors(0);
+    setEvEnabled(false);
+    setParkingType("NORMAL");
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     const payload = {
-      ...formData,
+      parkingName: formData.parkingName,
+      address: formData.address,
+      city: formData.city,
+      phone: formData.phone,
+      pinCode: formData.pincode,
+
+      price: Number(formData.price),
+      openTime: formData.openTime,
+      closeTime: formData.closeTime,
+
       evEnabled,
+      evPrice: evEnabled ? Number(formData.evPrice) : null,
+
       parkingType,
-      normalSlots,
-      floors: floorData
+
+      normalSlots:
+        parkingType === "NORMAL"
+          ? {
+              prefix: normalSlots.prefix,
+              totalSlots: Number(normalSlots.total),
+              evStations: evEnabled ? Number(normalSlots.evStations) : 0
+            }
+          : null,
+
+      floors:
+        parkingType === "MULTI"
+          ? floorData.map((f) => ({
+              floorName: f.floorName,
+              prefix: f.prefix,
+              totalSlots: Number(f.total),
+              evStations: evEnabled ? Number(f.evStations) : 0
+            }))
+          : []
     };
 
-    console.log(payload);
+    try {
+      const res = await createParking(payload);
+      console.log("SUCCESS ✅", res);
+
+      alert("Parking Created Successfully!");
+
+      // ✅ CLOSE DIALOG
+      setOpen(false);
+
+      // ✅ RESET FORM
+      resetForm();
+
+    } catch (err) {
+      console.error("ERROR ❌", err);
+      alert(err.message || "Failed to create parking");
+    }
   };
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
 
-      <DialogTrigger asChild>
-        <Button className="bg-gradient-to-r from-indigo-600 to-blue-600 text-white px-5 py-2.5 rounded-xl shadow-lg">
+      {/* OPEN BUTTON */}
+      <DialogTrigger asChild onClick={() => setOpen(true)}>
+        <Button className="bg-indigo-600 text-white">
           + New Parking
         </Button>
       </DialogTrigger>
@@ -92,17 +162,17 @@ export default function ParkingRegistrationForm() {
       <DialogContent className="sm:max-w-5xl bg-slate-100 rounded-3xl max-h-[90vh] overflow-y-auto">
 
         <DialogHeader>
-          <DialogTitle className="text-3xl font-semibold">
+          <DialogTitle className="text-2xl font-semibold">
             Register Parking
           </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-8">
 
+          {/* BASIC */}
           <Card title="Basic Details">
-
-            <PremiumInput icon={Building2} label="Parking Name" name="parkingName" onChange={handleChange} />
-            <PremiumInput icon={MapPin} label="Address" name="address" onChange={handleChange} />
+            <PremiumInput label="Parking Name" name="parkingName" onChange={handleChange} />
+            <PremiumInput label="Address" name="address" onChange={handleChange} />
 
             <Grid2>
               <PremiumInput label="City" name="city" onChange={handleChange} />
@@ -110,18 +180,18 @@ export default function ParkingRegistrationForm() {
             </Grid2>
 
             <Grid2>
-              <PremiumInput icon={IndianRupee} label="Parking Price / hour" name="price" onChange={handleChange} />
-              <PremiumInput icon={Clock3} label="Open Time" type="time" name="openTime" onChange={handleChange} />
+              <PremiumInput label="Price" name="price" onChange={handleChange} />
+              <PremiumInput type="time" label="Open Time" name="openTime" onChange={handleChange} />
             </Grid2>
 
-            <PremiumInput icon={Clock3} label="Close Time" type="time" name="closeTime" onChange={handleChange} />
-
+            <PremiumInput type="time" label="Close Time" name="closeTime" onChange={handleChange} />
           </Card>
 
+          {/* CONFIG */}
           <Card title="Parking Configuration">
 
             <select
-              className="w-full h-12 border rounded-xl px-4 bg-white"
+              className="w-full h-12 border rounded-xl px-4"
               value={parkingType}
               onChange={(e) => setParkingType(e.target.value)}
             >
@@ -129,28 +199,23 @@ export default function ParkingRegistrationForm() {
               <option value="MULTI">Multi Floor Parking</option>
             </select>
 
-            <div className="flex gap-3 mt-4 items-center">
+            <div className="flex gap-2 mt-3">
               <input type="checkbox" onChange={() => setEvEnabled(!evEnabled)} />
-              <Label>EV Charging Available</Label>
+              <Label>EV Enabled</Label>
             </div>
 
             {evEnabled && (
-              <PremiumInput
-                icon={IndianRupee}
-                label="EV Charging Price"
-                name="evPrice"
-                onChange={handleChange}
-              />
+              <PremiumInput label="EV Price" name="evPrice" onChange={handleChange} />
             )}
 
           </Card>
 
-
+          {/* NORMAL */}
           {parkingType === "NORMAL" && (
-            <Card title="Slot Details">
+            <Card title="Normal Slots">
 
               <PremiumInput
-                label="Slot Prefix"
+                label="Prefix"
                 onChange={(e) => setNormalSlots(prev => ({ ...prev, prefix: e.target.value }))}
               />
 
@@ -159,14 +224,9 @@ export default function ParkingRegistrationForm() {
                 onChange={(e) => setNormalSlots(prev => ({ ...prev, total: e.target.value }))}
               />
 
-              <p className="text-sm text-green-600">
-                Available Slots: {normalSlots.total || 0}
-              </p>
-
               {evEnabled && (
                 <PremiumInput
-                  icon={Zap}
-                  label="EV Charging Stations"
+                  label="EV Stations"
                   onChange={(e) => setNormalSlots(prev => ({ ...prev, evStations: e.target.value }))}
                 />
               )}
@@ -174,24 +234,18 @@ export default function ParkingRegistrationForm() {
             </Card>
           )}
 
-
+          {/* MULTI */}
           {parkingType === "MULTI" && (
-            <Card title="Floor Details">
+            <Card title="Floors">
 
               <PremiumInput
-                icon={Layers}
-                label="Number of Floors"
                 type="number"
+                label="No of Floors"
                 onChange={(e) => handleFloorCount(e.target.value)}
               />
 
               {floorData.map((floor, index) => (
-
-                <div key={index} className="bg-white p-6 rounded-xl space-y-4">
-
-                  <h3 className="text-lg font-semibold text-indigo-600">
-                    Floor {index + 1}
-                  </h3>
+                <div key={index} className="bg-white p-4 rounded-xl">
 
                   <PremiumInput
                     label="Floor Name"
@@ -199,7 +253,7 @@ export default function ParkingRegistrationForm() {
                   />
 
                   <PremiumInput
-                    label="Slot Prefix"
+                    label="Prefix"
                     onChange={(e) => updateFloor(index, "prefix", e.target.value)}
                   />
 
@@ -208,37 +262,25 @@ export default function ParkingRegistrationForm() {
                     onChange={(e) => updateFloor(index, "total", e.target.value)}
                   />
 
-                  <p className="text-sm text-green-600">
-                    Available: {floor.total || 0}
-                  </p>
-
                   {evEnabled && (
                     <PremiumInput
-                      icon={Zap}
-                      label="EV Charging Stations"
+                      label="EV Stations"
                       onChange={(e) => updateFloor(index, "evStations", e.target.value)}
                     />
                   )}
 
                 </div>
-
               ))}
 
             </Card>
           )}
 
           <DialogFooter>
-
             <DialogClose asChild>
-              <Button variant="secondary">
-                Cancel
-              </Button>
+              <Button variant="secondary">Cancel</Button>
             </DialogClose>
 
-            <Button type="submit" className="bg-indigo-600 text-white">
-              Save Parking
-            </Button>
-
+            <Button type="submit">Save</Button>
           </DialogFooter>
 
         </form>
@@ -248,32 +290,22 @@ export default function ParkingRegistrationForm() {
 }
 
 
+/* UI HELPERS */
+
 const Card = ({ title, children }) => (
-  <div className="bg-white p-8 rounded-2xl space-y-6 shadow-sm">
-    <h2 className="text-xl font-bold">{title}</h2>
+  <div className="bg-white p-6 rounded-xl space-y-4">
+    <h2 className="font-bold">{title}</h2>
     {children}
   </div>
 );
 
-
 const Grid2 = ({ children }) => (
-  <div className="grid md:grid-cols-2 gap-6">{children}</div>
+  <div className="grid grid-cols-2 gap-4">{children}</div>
 );
 
-
-const PremiumInput = ({ icon: Icon, label, ...props }) => (
-  <div className="space-y-2">
+const PremiumInput = ({ label, ...props }) => (
+  <div>
     <Label>{label}</Label>
-
-    <div className="flex items-center border rounded-xl px-3 h-12 bg-white">
-
-      {Icon && <Icon className="w-4 h-4 mr-2 text-gray-400" />}
-
-      <Input
-        className="w-full border-none bg-transparent focus-visible:ring-0"
-        {...props}
-      />
-
-    </div>
+    <Input {...props} />
   </div>
 );

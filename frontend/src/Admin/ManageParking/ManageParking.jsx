@@ -1,65 +1,60 @@
 import { useState, useEffect } from "react";
-import { CarFront, Trash2, Pencil } from "lucide-react";
+import { CarFront, Trash2, Pencil, Zap } from "lucide-react";
 
 import EditParkingForm from "./EditParkingForm";
 import AdminLayout from "@/layouts/AdminLayout";
 import ParkingRegistrationForm from "./ParkingRegistration";
 
+import { getAllParkings, deleteParking } from "@/api/adminApi";
+
 export default function ManageParking() {
 
   const [parkings, setParkings] = useState([]);
 
-  // ✅ SEARCH STATE
   const [search, setSearch] = useState("");
 
-  // ✅ EDIT STATES
   const [editOpen, setEditOpen] = useState(false);
   const [selectedParking, setSelectedParking] = useState(null);
 
   useEffect(() => {
-    const backendData = [
-      { id: 1, name: "Phoenix Mall Parking", area: "Alambagh", location: "Lucknow", totalSlots: 100, occupiedSlots: 60 },
-      { id: 2, name: "Railway Station Parking", area: "Charbagh", location: "Lucknow", totalSlots: 120, occupiedSlots: 80 },
-      { id: 3, name: "Lulu Mall Parking", area: "Golf City", location: "Lucknow", totalSlots: 150, occupiedSlots: 90 },
-      { id: 4, name: "Airport Parking", area: "Amausi", location: "Lucknow", totalSlots: 200, occupiedSlots: 140 },
-      { id: 5, name: "Hazratganj Parking", area: "Hazratganj", location: "Lucknow", totalSlots: 80, occupiedSlots: 50 },
-      { id: 6, name: "Wave Mall Parking", area: "Gomti Nagar", location: "Lucknow", totalSlots: 90, occupiedSlots: 30 },
-      { id: 7, name: "Kapoorthala Parking", area: "Aliganj", location: "Lucknow", totalSlots: 70, occupiedSlots: 20 },
-      { id: 8, name: "Indira Nagar Parking", area: "Indira Nagar", location: "Lucknow", totalSlots: 110, occupiedSlots: 95 },
-      { id: 9, name: "Medanta Parking", area: "Shaheed Path", location: "Lucknow", totalSlots: 130, occupiedSlots: 100 },
-      { id: 10, name: "High Court Parking", area: "Qaiserbagh", location: "Lucknow", totalSlots: 60, occupiedSlots: 25 },
-      { id: 11, name: "Sahara Ganj Parking", area: "Hazratganj", location: "Lucknow", totalSlots: 140, occupiedSlots: 100 },
-{ id: 12, name: "Fun Republic Parking", area: "Gomti Nagar", location: "Lucknow", totalSlots: 90, occupiedSlots: 40 },
-{ id: 13, name: "Patrakarpuram Parking", area: "Gomti Nagar", location: "Lucknow", totalSlots: 75, occupiedSlots: 35 },
-{ id: 14, name: "Daliganj Parking", area: "Daliganj", location: "Lucknow", totalSlots: 60, occupiedSlots: 20 },
-{ id: 15, name: "IT Metro Parking", area: "Aliganj", location: "Lucknow", totalSlots: 110, occupiedSlots: 70 },
-{ id: 16, name: "Badshah Nagar Parking", area: "Nishatganj", location: "Lucknow", totalSlots: 95, occupiedSlots: 50 },
-{ id: 17, name: "Transport Nagar Parking", area: "Transport Nagar", location: "Lucknow", totalSlots: 130, occupiedSlots: 90 },
-{ id: 18, name: "Krishna Nagar Parking", area: "Krishna Nagar", location: "Lucknow", totalSlots: 80, occupiedSlots: 30 },
-{ id: 19, name: "Ashiyana Parking", area: "Ashiyana", location: "Lucknow", totalSlots: 120, occupiedSlots: 60 },
-{ id: 20, name: "Telibagh Parking", area: "Telibagh", location: "Lucknow", totalSlots: 70, occupiedSlots: 25 },
-
-{ id: 21, name: "Rajajipuram Parking", area: "Rajajipuram", location: "Lucknow", totalSlots: 100, occupiedSlots: 55 },
-{ id: 22, name: "Chowk Parking", area: "Chowk", location: "Lucknow", totalSlots: 65, occupiedSlots: 45 },
-{ id: 23, name: "Aminabad Parking", area: "Aminabad", location: "Lucknow", totalSlots: 85, occupiedSlots: 70 },
-{ id: 24, name: "Kaiserbagh Parking", area: "Kaiserbagh", location: "Lucknow", totalSlots: 90, occupiedSlots: 65 },
-{ id: 25, name: "Mahanagar Parking", area: "Mahanagar", location: "Lucknow", totalSlots: 105, occupiedSlots: 50 },
-{ id: 26, name: "Vibhuti Khand Parking", area: "Gomti Nagar", location: "Lucknow", totalSlots: 160, occupiedSlots: 120 },
-{ id: 27, name: "DLF My Pad Parking", area: "Vibhuti Khand", location: "Lucknow", totalSlots: 150, occupiedSlots: 110 },
-{ id: 28, name: "Ekana Stadium Parking", area: "Shaheed Path", location: "Lucknow", totalSlots: 300, occupiedSlots: 210 },
-{ id: 29, name: "PGI Parking", area: "Raebareli Road", location: "Lucknow", totalSlots: 180, occupiedSlots: 130 },
-{ id: 30, name: "Cantt Parking", area: "Cantonment", location: "Lucknow", totalSlots: 95, occupiedSlots: 60 },
-    ];
-
-    setParkings(backendData);
+    fetchParkings();
   }, []);
 
-  // ✅ DELETE
-  const handleDelete = (id) => {
-    setParkings(prev => prev.filter((p) => p.id !== id));
+  const fetchParkings = async () => {
+    try {
+      const res = await getAllParkings();
+
+      // ✅ UPDATED MAPPING (EV INCLUDED)
+      const mapped = res.map((p) => ({
+        id: p.id,
+        name: p.parkingName,
+        area: p.parkingAddress,
+        location: p.parkingAddress,
+
+        totalSlots: p.totalSlot,
+        occupiedSlots: p.totalSlot - p.availableSlot,
+
+        // ✅ NEW EV FIELDS
+        evStation: p.evStation || 0,
+        evAvailable: p.evAvailable || 0
+      }));
+
+      setParkings(mapped);
+
+    } catch (err) {
+      console.error("Failed to fetch parkings", err);
+    }
   };
 
-  // ✅ OPEN EDIT
+  const handleDelete = async (id) => {
+    try {
+      await deleteParking(id);
+      setParkings(prev => prev.filter((p) => p.id !== id));
+    } catch (err) {
+      console.error("Delete failed", err);
+    }
+  };
+
   const handleEdit = (parking) => {
     setSelectedParking({
       ...parking,
@@ -69,9 +64,7 @@ export default function ManageParking() {
     setEditOpen(true);
   };
 
-  // ✅ UPDATE
   const handleUpdate = (updated) => {
-
     const totalSlots =
       Number(updated.available) + Number(updated.occupied);
 
@@ -91,7 +84,6 @@ export default function ManageParking() {
     );
   };
 
-  // ✅ SEARCH FILTER
   const filteredParkings = parkings.filter((p) =>
     `${p.name} ${p.area} ${p.location}`
       .toLowerCase()
@@ -129,7 +121,7 @@ export default function ManageParking() {
           />
         </div>
 
-        {/* EMPTY STATE */}
+        {/* EMPTY */}
         {filteredParkings.length === 0 && (
           <div className="text-center text-gray-400 py-10">
             No parking found
@@ -172,7 +164,7 @@ export default function ManageParking() {
                 </h2>
 
                 <p className="text-sm text-gray-500 mb-3">
-                  📍 {p.area}, {p.location}
+                  📍 {p.area}
                 </p>
 
                 <div className="flex justify-between text-sm mb-2">
@@ -194,10 +186,22 @@ export default function ManageParking() {
                   />
                 </div>
 
-                <div className="flex justify-between text-sm font-medium">
+                <div className="flex justify-between text-sm font-medium mb-2">
                   <span className="text-green-600">Avl: {available}</span>
                   <span className="text-red-500">Occ: {p.occupiedSlots}</span>
                 </div>
+
+                {/* ✅ NEW EV SECTION */}
+                {p.evStation > 0 && (
+                  <div className="flex justify-between text-xs bg-blue-50 px-3 py-2 rounded-lg">
+                    <span className="flex items-center gap-1 text-blue-600">
+                      <Zap size={14} /> EV: {p.evStation}
+                    </span>
+                    <span className="text-green-600">
+                      Avl: {p.evAvailable}
+                    </span>
+                  </div>
+                )}
 
               </div>
             );
@@ -205,7 +209,7 @@ export default function ManageParking() {
 
         </div>
 
-        {/* EDIT MODAL */}
+        {/* EDIT */}
         <EditParkingForm
           open={editOpen}
           setOpen={setEditOpen}

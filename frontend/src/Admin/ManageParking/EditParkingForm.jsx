@@ -8,6 +8,9 @@ import {
 import { Label } from "@/components/ui/label";
 import Input from "@/components/ui/Input";
 
+// ✅ IMPORT API
+import { updateParking } from "@/api/adminApi";
+
 export default function EditParkingForm({ open, setOpen, data, onUpdate }) {
 
   const [form, setForm] = useState({
@@ -18,6 +21,7 @@ export default function EditParkingForm({ open, setOpen, data, onUpdate }) {
     occupied: 0
   });
 
+  // ✅ PREFILL DATA
   useEffect(() => {
     if (data) {
       setForm({
@@ -41,10 +45,40 @@ export default function EditParkingForm({ open, setOpen, data, onUpdate }) {
     }));
   };
 
-  const handleSubmit = (e) => {
+  // ✅ FIXED SUBMIT (API CALL)
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onUpdate(form);
-    setOpen(false);
+
+    // 🔥 BACKEND PAYLOAD
+    const payload = {
+      parkingName: form.name,
+      parkingAddress: form.area,
+
+      totalSlot: Number(form.available) + Number(form.occupied),
+      availableSlot: Number(form.available),
+
+      evStation: data.evStation || 0,
+      evAvailable: data.evAvailable || 0,
+
+      parkingPrice: 0,
+      evPrice: 0
+    };
+
+    try {
+      // ✅ CALL UPDATE API
+      await updateParking(data.id, payload);
+
+      // ✅ UPDATE UI LOCALLY
+      onUpdate(form);
+
+      alert("Parking Updated!");
+
+      setOpen(false);
+
+    } catch (err) {
+      console.error(err);
+      alert("Update failed");
+    }
   };
 
   return (
