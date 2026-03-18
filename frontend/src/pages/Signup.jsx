@@ -1,19 +1,20 @@
-
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ParkingCircle } from 'lucide-react';
 import Input from '../components/ui/Input';
 import { Button } from '@/components/ui/button';
-
+import { useAuth } from "../context/AuthContext";
 
 export default function Signup() {
+  const { signup } = useAuth();
+
   const [formData, setFormData] = useState({
-    fullName: '',
+    name: '',
     email: '',
     phone: "",
-    password: '',
-    confirmPassword: '',
+    password: ''
   });
+
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -41,23 +42,21 @@ export default function Signup() {
       }
     }
 
-      if (name === "phone") {
-  if (!value) {
-    newErrors.phone = "Phone number is required";
-  } else if (!/^[0-9]{10}$/.test(value)) {
-    newErrors.phone = "Enter a valid 10-digit phone number";
-  } else {
-    delete newErrors.phone;
-  }
-}
-
-
-
-    if (name === 'fullName') {
+    if (name === "phone") {
       if (!value) {
-        newErrors.fullName = 'Full name is required';
+        newErrors.phone = "Phone number is required";
+      } else if (!/^[0-9]{10}$/.test(value)) {
+        newErrors.phone = "Enter a valid 10-digit phone number";
       } else {
-        delete newErrors.fullName;
+        delete newErrors.phone;
+      }
+    }
+
+    if (name === 'name') {
+      if (!value) {
+        newErrors.name = 'Full name is required';
+      } else {
+        delete newErrors.name;
       }
     }
 
@@ -69,22 +68,6 @@ export default function Signup() {
       } else {
         delete newErrors.password;
       }
-
-      if (formData.confirmPassword && value !== formData.confirmPassword) {
-        newErrors.confirmPassword = 'Passwords do not match';
-      } else if (formData.confirmPassword) {
-        delete newErrors.confirmPassword;
-      }
-    }
-
-    if (name === 'confirmPassword') {
-      if (!value) {
-        newErrors.confirmPassword = 'Please confirm your password';
-      } else if (value !== formData.password) {
-        newErrors.confirmPassword = 'Passwords do not match';
-      } else {
-        delete newErrors.confirmPassword;
-      }
     }
 
     setErrors(newErrors);
@@ -94,8 +77,8 @@ export default function Signup() {
     e.preventDefault();
     const newErrors = {};
 
-    if (!formData.fullName) {
-      newErrors.fullName = 'Full name is required';
+    if (!formData.name) {
+      newErrors.name = 'Full name is required';
     }
 
     if (!formData.email) {
@@ -110,30 +93,33 @@ export default function Signup() {
       newErrors.password = 'Password must be at least 8 characters';
     }
 
-    if (!formData.confirmPassword) {
-      newErrors.confirmPassword = 'Please confirm your password';
-    } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
-    }
-
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
 
     setIsSubmitting(true);
-    setTimeout(() => {
-      console.log('Signup submitted:', formData);
-      setIsSubmitting(false);
-    }, 1000);
+
+    const res = await signup({
+      name: formData.name,
+      email: formData.email,
+      phone: formData.phone,
+      password: formData.password,
+    });
+
+    if (res.success) {
+      alert("Signup successful");
+    } else {
+      alert(res.message);
+    }
+
+    setIsSubmitting(false);
   };
 
   const isFormValid =
-    formData.fullName &&
+    formData.name &&
     formData.email &&
     formData.password &&
-    formData.confirmPassword &&
-    formData.password === formData.confirmPassword &&
     formData.password.length >= 8 &&
     validateEmail(formData.email);
 
@@ -157,8 +143,8 @@ export default function Signup() {
             <div className="w-8 h-8 rounded-full bg-emerald-500"></div>
           </div>
           <div className="flex flex-col">
-            <span className="text-4xl font-extrabold text-white tracking-wide leading-none">PARK</span>
-            <span className="text-4xl font-light text-white tracking-[0.35em] leading-none">SMART</span>
+            <span className="text-4xl font-extrabold text-white">PARK</span>
+            <span className="text-4xl font-light text-white tracking-[0.35em]">SMART</span>
           </div>
         </div>
       </div>
@@ -166,18 +152,6 @@ export default function Signup() {
       <div className="w-full lg:w-[38%] flex items-center justify-center p-6 sm:p-8 bg-gradient-to-br from-gray-50 to-white">
         <div className="w-full max-w-md">
           <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl p-8 sm:p-10 border border-gray-100">
-            <div className="lg:hidden flex items-center justify-center gap-3 mb-8">
-              <div className="grid grid-cols-2 gap-0.5 w-12 h-12">
-                <div className="w-5.5 h-5.5 rounded-full bg-red-600"></div>
-                <div className="w-5.5 h-5.5 rounded-full bg-yellow-400"></div>
-                <div className="w-5.5 h-5.5 rounded-full bg-blue-600"></div>
-                <div className="w-5.5 h-5.5 rounded-full bg-emerald-500"></div>
-              </div>
-              <div className="flex flex-col items-start">
-                <span className="text-2xl font-black text-gray-800 tracking-wider leading-none">PARK</span>
-                <span className="text-2xl font-light text-gray-800 tracking-[0.3em] leading-none">SMART</span>
-              </div>
-            </div>
 
             <h2 className="text-3xl font-bold text-gray-900 mb-1">Create an Account</h2>
             <p className="text-gray-600 mb-4 text-sm">Get started with ParkSmart</p>
@@ -186,11 +160,11 @@ export default function Signup() {
               <Input
                 label="Full Name"
                 type="text"
-                name="fullName"
+                name="name"
                 placeholder="John Doe"
-                value={formData.fullName}
+                value={formData.name}
                 onChange={handleChange}
-                error={errors.fullName}
+                error={errors.name}
                 required
               />
 
@@ -204,59 +178,42 @@ export default function Signup() {
                 error={errors.email}
                 required
               />
-               
-               <Input
+
+              <Input
                 label="Phone Number"
                 type="tel"
                 name="phone"
-                placeholder="Enter your phone number"
                 value={formData.phone}
                 onChange={handleChange}
                 error={errors.phone}
                 required
-               />
+              />
 
- 
               <Input
                 label="Password"
                 type="password"
                 name="password"
-                placeholder="Min. 8 character"
                 value={formData.password}
                 onChange={handleChange}
                 error={errors.password}
                 required
-                showPasswordToggle
-              />
-
-              <Input
-                label="Confirm Password"
-                type="password"
-                name="confirmPassword"
-                placeholder="Confirm your password"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                error={errors.confirmPassword}
-                required
-                showPasswordToggle
               />
 
               <Button
                 type="submit"
-                variant="primary"
                 disabled={!isFormValid || isSubmitting}
-                className="mt-3"
               >
                 {isSubmitting ? 'Creating account...' : 'Create Account'}
               </Button>
 
               <p className="text-center text-sm text-gray-600 mt-3">
                 Already have an account?{' '}
-                <Link to="/login" className="text-emerald-600 hover:text-emerald-700 font-semibold transition">
+                <Link to="/login" className="text-emerald-600 font-semibold">
                   Sign in
                 </Link>
               </p>
             </form>
+
           </div>
         </div>
       </div>
