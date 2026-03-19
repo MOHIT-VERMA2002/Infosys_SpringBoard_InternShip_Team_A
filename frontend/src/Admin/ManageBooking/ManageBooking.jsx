@@ -2,136 +2,97 @@ import { useState, useEffect } from "react";
 import {
   CalendarDays,
   BellRing,
-  TrendingUp,
-  AlertTriangle,
   Eye,
-  Activity
+  Search
 } from "lucide-react";
 import AdminLayout from "@/layouts/AdminLayout";
+import { getTodayBookings } from "@/api/adminApi";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 export default function ManageBookings() {
 
   const [bookings, setBookings] = useState([]);
   const [search, setSearch] = useState("");
   const [toast, setToast] = useState("");
-  const [statusFilter, setStatusFilter] = useState("All");
-
-  const [parkingFilter, setParkingFilter] = useState("All");
-  const [sortOrder, setSortOrder] = useState("desc");
   const [page, setPage] = useState(1);
-  const [selectedBooking, setSelectedBooking] = useState(null);
 
   const itemsPerPage = 8;
 
   useEffect(() => {
+    const fetchBookings = async () => {
+      try {
+        const res = await getTodayBookings();
 
-    const parkings = ["Phoenix Mall","Lulu Mall","Airport","Hazratganj","Ekana Stadium"];
-    const users = ["Rahul","Amit","Sara","John","Ali","Zoya","Kabir","Riya","Vikram","Neha"];
+        const mapped = res.map((b, i) => ({
+          id: b.customId || i,
+          customId: b.customId || "-",
+          user: b.user || "-",
+          parking: b.parking || "-",
+          slot: b.slot || "-",
+          car: b.car || "-",
+          date: b.date ? new Date(b.date).toLocaleString() : "-", // ✅ FIX
+          status: b.status || "PENDING",
+          amount: b.amount || 0
+        }));
 
-    const data = Array.from({ length: 35 }, (_, i) => {
+        setBookings(mapped);
 
-      const isToday = i % 5 === 0;
-      const status = i % 3 === 0 ? "Pending" : "Confirmed";
+      } catch (err) {
+        console.error(err);
+      }
+    };
 
-      return {
-        id: i + 1,
-        user: users[i % users.length],
-        parking: parkings[i % parkings.length],
-        date: isToday
-          ? new Date().toISOString().split("T")[0]
-          : `2026-01-${(i % 28) + 1}`,
-        slot: `A-${i + 10}`,
-        status,
-        amount: 80 + i * 5
-      };
-
-    });
-
-    setBookings(data);
-
+    fetchBookings();
   }, []);
-
-  const today = new Date().toISOString().split("T")[0];
-
-  const todayBookings = bookings.filter(b => b.date === today);
 
   const totalRevenue = bookings.reduce((sum, b) => sum + b.amount, 0);
 
-  const parkingStats = Object.values(
-    bookings.reduce((acc, b) => {
-      acc[b.parking] = acc[b.parking] || { name: b.parking, count: 0, revenue:0 };
-      acc[b.parking].count++;
-      acc[b.parking].revenue += b.amount;
-      return acc;
-    }, {})
+  const filteredBookings = bookings.filter((b) =>
+    `${b.user} ${b.parking} ${b.slot} ${b.status} ${b.customId}`
+      .toLowerCase()
+      .includes(search.toLowerCase())
   );
-
-  const pendingBookings = bookings.filter(b=>b.status==="Pending");
-
-  /* FILTER */
-
-  let filteredBookings = bookings.filter((b) => {
-
-    const matchesSearch =
-      `${b.user} ${b.parking} ${b.slot} ${b.status}`
-        .toLowerCase()
-        .includes(search.toLowerCase());
-
-    const matchesStatus =
-      statusFilter === "All" || b.status === statusFilter;
-
-    const matchesParking =
-      parkingFilter === "All" || b.parking === parkingFilter;
-
-    return matchesSearch && matchesStatus && matchesParking;
-
-  });
-
-  filteredBookings.sort((a,b)=>
-    sortOrder==="asc"
-      ? new Date(a.date)-new Date(b.date)
-      : new Date(b.date)-new Date(a.date)
-  );
-
-  const totalPages = Math.ceil(filteredBookings.length/itemsPerPage);
 
   const paginatedBookings =
-    filteredBookings.slice((page-1)*itemsPerPage,page*itemsPerPage);
+    filteredBookings.slice((page - 1) * itemsPerPage, page * itemsPerPage);
 
-  const handleCancel = (id, user) => {
+  // ✅ PDF EXPORT (PRODUCTION STYLE)
+  const exportPDF = () => {
+    const doc = new jsPDF();
 
-    setBookings(prev =>
-      prev.map(b =>
-        b.id === id ? { ...b, status: "Cancelled" } : b
-      )
-    );
+    doc.setFontSize(16);
+    doc.text("Parking Bookings Report", 14, 15);
 
-    setToast(`Booking cancelled & ${user} notified`);
-    setTimeout(() => setToast(""), 3000);
+    const tableData = filteredBookings.map(b => [
+      b.customId,
+      b.user,
+      b.parking,
+      b.slot,
+      b.date,
+      b.amount,
+      b.status
+    ]);
 
-  };
+    autoTable(doc, {
+      startY: 25,
+      head: [["ID", "User", "Parking", "Slot", "Date", "Amount", "Status"]],
+      body: tableData,
 
-  const exportCSV=()=>{
+      headStyles: {
+        fillColor: [37, 99, 235], // blue
+        textColor: 255
+      },
 
-    const rows=[
-      ["ID","User","Parking","Slot","Date","Amount","Status"],
-      ...filteredBookings.map(b=>[
-        b.id,b.user,b.parking,b.slot,b.date,b.amount,b.status
-      ])
-    ];
+      alternateRowStyles: {
+        fillColor: [245, 247, 250]
+      }
+    });
 
-    const csv=rows.map(r=>r.join(",")).join("\n");
-
-    const blob=new Blob([csv],{type:"text/csv"});
-    const link=document.createElement("a");
-    link.href=URL.createObjectURL(blob);
-    link.download="bookings.csv";
-    link.click();
-
+    doc.save("bookings-report.pdf");
   };
 
   return (
-
     <AdminLayout>
 
       <div className="max-w-7xl mx-auto px-4 py-6 space-y-10">
@@ -146,129 +107,63 @@ export default function ManageBookings() {
           </div>
         )}
 
-        {/* KPI CARDS */}
+        {/* SEARCH + PDF BUTTON */}
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="flex flex-wrap gap-3 items-center">
 
-          <StatCard title="Total Bookings" value={bookings.length}/>
-          <StatCard title="Today Bookings" value={todayBookings.length}/>
-          <StatCard title="Total Revenue" value={`₹ ${totalRevenue}`}/>
-          <StatCard title="Pending Alerts" value={pendingBookings.length}/>
-
-        </div>
-
-        {/* PARKING PERFORMANCE */}
-
-        <Section title="Parking Performance">
-
-          {parkingStats.map(p=>{
-
-            const percent=(p.count/bookings.length)*100;
-
-            return(
-
-              <div key={p.name} className="mb-4">
-
-                <div className="flex justify-between text-sm mb-1">
-                  <span>{p.name}</span>
-                  <span>{p.count} bookings</span>
-                </div>
-
-                <div className="w-full bg-gray-200 h-3 rounded-full">
-
-                  <div
-                    className="bg-blue-600 h-3 rounded-full"
-                    style={{width:`${percent}%`}}
-                  />
-
-                </div>
-
-              </div>
-
-            );
-
-          })}
-
-        </Section>
-
-        {/* BOOKING TABLE */}
-
-       <Section title="Real-Time Parking Booking Activity">
-
-          <div className="flex flex-wrap gap-3 mb-4">
-
+          <div className="relative w-full max-w-md">
+            <Search className="absolute left-3 top-3 text-gray-400" size={18}/>
             <input
               value={search}
               onChange={(e)=>setSearch(e.target.value)}
-              placeholder="Search booking..."
-              className="border px-4 py-2 rounded-lg text-sm"
+              placeholder="Search booking, user, parking, ID..."
+              className="w-full pl-10 pr-4 py-2 rounded-xl border shadow-sm focus:ring-2 focus:ring-blue-500 outline-none text-sm"
             />
-
-            <select
-              value={statusFilter}
-              onChange={(e)=>setStatusFilter(e.target.value)}
-              className="border px-3 py-2 rounded-lg"
-            >
-              <option>All</option>
-              <option>Confirmed</option>
-              <option>Pending</option>
-              <option>Cancelled</option>
-            </select>
-
-            <select
-              value={parkingFilter}
-              onChange={(e)=>setParkingFilter(e.target.value)}
-              className="border px-3 py-2 rounded-lg"
-            >
-              <option>All</option>
-              {parkingStats.map(p=>(
-                <option key={p.name}>{p.name}</option>
-              ))}
-            </select>
-
-            <button
-              onClick={()=>setSortOrder(sortOrder==="asc"?"desc":"asc")}
-              className="border px-4 py-2 rounded-lg text-sm"
-            >
-              Sort {sortOrder==="asc"?"↑":"↓"}
-            </button>
-
-            <button
-              onClick={exportCSV}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm"
-            >
-              Export CSV
-            </button>
-
           </div>
 
-          <div className="bg-white rounded-2xl shadow overflow-hidden">
+          <button
+            onClick={exportPDF}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm"
+          >
+            Export PDF
+          </button>
 
-            <table className="w-full text-sm">
+        </div>
 
-              <thead className="bg-gray-50">
+        {/* TABLE */}
 
-                <tr>
+        <div className="bg-white rounded-2xl shadow overflow-hidden">
 
-                  <th className="p-4 text-left">ID</th>
-                  <th className="p-4 text-left">User</th>
-                  <th className="p-4 text-left">Parking</th>
-                  <th className="p-4 text-left">Slot</th>
-                  <th className="p-4 text-left">Date</th>
-                  <th className="p-4 text-left">Amount</th>
-                  <th className="p-4 text-left">Status</th>
-                  <th className="p-4 text-right">Action</th>
+          <table className="w-full text-sm">
 
-                </tr>
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="p-4 text-left">UserID</th>
+                <th className="p-4 text-left">User</th>
+                <th className="p-4 text-left">Parking</th>
+                <th className="p-4 text-left">Slot</th>
+                <th className="p-4 text-left">Date</th>
+                <th className="p-4 text-left">Amount</th>
+                <th className="p-4 text-left">Status</th>
+                <th className="p-4 text-right">Action</th>
+              </tr>
+            </thead>
 
-              </thead>
+            <tbody>
 
-              <tbody>
+              {paginatedBookings.map(b => {
 
-                {paginatedBookings.map(b=>(
-                  <tr key={b.id} className="border-t hover:bg-gray-50">
+                const rowColor =
+                  b.status === "CONFIRMED"
+                    ? "bg-green-50"
+                    : b.status === "PENDING"
+                    ? "bg-yellow-50"
+                    : "bg-red-50";
 
-                    <td className="p-4">{b.id}</td>
+                return (
+                  <tr key={b.id} className={`border-t ${rowColor}`}>
+
+                    <td className="p-4">{b.customId}</td>
                     <td className="p-4">{b.user}</td>
                     <td className="p-4">{b.parking}</td>
                     <td className="p-4">{b.slot}</td>
@@ -282,80 +177,38 @@ export default function ManageBookings() {
                     <td className="p-4 text-right flex gap-2 justify-end">
 
                       <button
-                        onClick={()=>setSelectedBooking(b)}
                         className="bg-gray-200 px-3 py-1 rounded-lg text-xs flex items-center gap-1"
                       >
                         <Eye size={14}/> View
                       </button>
 
-                      {b.status==="Pending"&&(
-                        <button
-                          onClick={()=>handleCancel(b.id,b.user)}
-                          className="bg-red-500 text-white px-3 py-1 rounded-lg text-xs"
-                        >
-                          Cancel
-                        </button>
-                      )}
-
                     </td>
 
                   </tr>
-                ))}
+                );
+              })}
 
-              </tbody>
+            </tbody>
 
-            </table>
+          </table>
 
-          </div>
-
-          {/* PAGINATION */}
-
-          <div className="flex justify-center gap-2 mt-4">
-
-            {[...Array(totalPages)].map((_,i)=>(
-              <button
-                key={i}
-                onClick={()=>setPage(i+1)}
-                className={`px-3 py-1 rounded-lg ${
-                  page===i+1?"bg-blue-600 text-white":"bg-gray-200"
-                }`}
-              >
-                {i+1}
-              </button>
-            ))}
-
-          </div>
-
-        </Section>
+        </div>
 
       </div>
 
     </AdminLayout>
-
   );
 }
 
-/* COMPONENTS */
-
-const StatCard=({title,value})=>(
-  <div className="bg-white border p-6 rounded-2xl shadow">
-    <p className="text-sm text-gray-500">{title}</p>
-    <h2 className="text-3xl font-bold text-blue-600 mt-2">{value}</h2>
-  </div>
-);
-
-const Section=({title,children})=>(
-  <div className="space-y-5">
-    <h2 className="text-xl font-semibold">{title}</h2>
-    {children}
-  </div>
-);
+/* STATUS BADGE */
 
 const StatusBadge=({status})=>(
-  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-    status==="Confirmed"?"bg-green-100 text-green-600":
-    status==="Pending"?"bg-yellow-100 text-yellow-600":
-    "bg-red-100 text-red-500"
+  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+    status==="CONFIRMED"
+      ? "bg-green-100 text-green-700"
+      : status==="PENDING"
+      ? "bg-yellow-100 text-yellow-700"
+      : "bg-red-100 text-red-600"
   }`}>
     {status}
   </span>
