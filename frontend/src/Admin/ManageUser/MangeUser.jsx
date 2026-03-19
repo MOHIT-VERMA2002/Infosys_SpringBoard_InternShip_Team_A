@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Users, MoreVertical } from "lucide-react";
 import AdminLayout from "@/layouts/AdminLayout";
-
+import { getAllUsers } from "@/api/adminApi";
 
 export default function ManageUsers() {
 
@@ -10,71 +10,62 @@ export default function ManageUsers() {
   const [openMenu, setOpenMenu] = useState(null);
 
   useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const res = await getAllUsers();
 
-    const data = [
-      {
-        id: 1,
-        name: "Rahul Verma",
-        phone: "9876543210",
-        city: "Lucknow",
-        cars: ["UP32 AB 1234", "UP32 XY 9087"],
-        totalBookings: 12,
-        totalSpent: 2400,
-        blocked: false,
-        lastBooking: {
-          parking: "Phoenix Mall",
-          date: "2026-02-20",
-          slot: "A-12",
-          amount: 120
-        }
-      },
-      {
-        id: 2,
-        name: "Amit Singh",
-        phone: "9123456780",
-        city: "Kanpur",
-        cars: ["UP78 KK 9081"],
-        totalBookings: 2,
-        totalSpent: 300,
-        blocked: false,
-        lastBooking: {
-          parking: "Lulu Mall",
-          date: "2025-12-01",
-          slot: "B-05",
-          amount: 100
-        }
+        const mappedUsers = res.map((u, index) => ({
+          id: u.customId || index,
+          customId: u.customId,
+          name: u.name,
+          phone: u.phone,
+          city: u.cityName,
+          cars: u.vehicle ? [u.vehicle] : [],
+          totalBookings: Number(u.totalBooking || 0),
+          totalSpent: u.lastBooking?.amount || 0,
+          status: u.userStatusType,
+
+          lastBooking: u.lastBooking
+            ? {
+                parkingId: u.lastBooking.parkingId,
+                date: u.lastBooking.startTime,
+                slot: u.lastBooking.spotNumber,
+                floor: u.lastBooking.floorName,
+                amount: u.lastBooking.amount,
+              }
+            : {
+                parkingId: "-",
+                date: "-",
+                slot: "-",
+                floor: "-",
+                amount: 0,
+              }
+        }));
+
+        setUsers(mappedUsers);
+
+      } catch (err) {
+        console.error("Error fetching users", err);
       }
-    ];
+    };
 
-    setUsers(data);
-
+    fetchUsers();
   }, []);
 
-  const getStatus = (user) => {
 
-    if (user.blocked) return "Blocked";
+  const getStatus = (user) => user.status || "ACTIVE";
 
-    const last = new Date(user.lastBooking.date);
-    const today = new Date();
-    const diff = (today - last) / (1000 * 60 * 60 * 24);
+  const filteredUsers = users.filter((u) => {
+    const searchText = query.toLowerCase().trim();
 
-    return diff > 30 ? "Inactive" : "Active";
-  };
-
-  const toggleBlock = (id) => {
-    setUsers(prev =>
-      prev.map(u =>
-        u.id === id ? { ...u, blocked: !u.blocked } : u
-      )
+    return (
+      (u.name || "").toLowerCase().includes(searchText) ||
+      (u.phone || "").includes(searchText) ||
+      (u.city || "").toLowerCase().includes(searchText) ||
+      (u.customId || "").toLowerCase().includes(searchText) || 
+      (u.cars || []).join(" ").toLowerCase().includes(searchText)
     );
-    setOpenMenu(null);
-  };
-
-  const filteredUsers = users.filter((u) =>
-    `${u.name} ${u.phone} ${u.city} ${u.cars.join(" ")}`
-      .toLowerCase()
-      .includes(query.toLowerCase().trim())
-  );
+  });
 
   return (
     <AdminLayout>
@@ -94,7 +85,7 @@ export default function ManageUsers() {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search by name, phone, city, car number..."
+              placeholder="Search by name, phone, city, car number, user ID..."
               className="w-full pl-11 pr-24 py-3 rounded-xl border text-sm focus:ring-2 focus:ring-blue-500 outline-none"
             />
 
@@ -134,6 +125,11 @@ export default function ManageUsers() {
 
                   <div>
                     <h2 className="text-lg font-semibold text-gray-800">{user.name}</h2>
+
+                    <p className="text-xs text-gray-400">
+                      USER-ID: {user.customId}
+                    </p>
+
                     <p className="text-sm text-gray-500">{user.phone}</p>
                     <p className="text-sm text-gray-400">{user.city}</p>
                   </div>
@@ -147,11 +143,8 @@ export default function ManageUsers() {
 
                     {openMenu === user.id && (
                       <div className="absolute right-0 mt-2 w-32 bg-white border rounded-lg shadow-lg text-sm z-10">
-                        <button
-                          onClick={() => toggleBlock(user.id)}
-                          className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-                        >
-                          {user.blocked ? "Unblock" : "Block"}
+                        <button className="block w-full text-left px-4 py-2 text-gray-400">
+                          No Actions
                         </button>
                       </div>
                     )}
@@ -181,21 +174,26 @@ export default function ManageUsers() {
 
                 <div className="bg-gray-50 rounded-xl p-4 space-y-1">
                   <p className="text-xs text-gray-400">Last Booking</p>
-                  <p className="text-sm font-medium">{user.lastBooking.parking}</p>
-                  <p className="text-xs text-gray-500">
-                    {user.lastBooking.date} • Slot {user.lastBooking.slot}
+
+                  <p className="text-sm font-medium">
+                    Parking ID: {user.lastBooking?.parkingId || "-"}
                   </p>
+
+                  <p className="text-xs text-gray-500">
+                    {user.lastBooking?.date || "-"} • 
+                    Slot {user.lastBooking?.slot || "-"} • 
+                    Floor {user.lastBooking?.floor || "-"}
+                  </p>
+
                   <p className="text-sm font-semibold text-blue-600">
-                    ₹ {user.lastBooking.amount}
+                    ₹ {user.lastBooking?.amount || 0}
                   </p>
                 </div>
 
                 <span className={`text-xs px-3 py-1 rounded-full font-medium w-fit ${
-                  status === "Active"
+                  status === "ACTIVE"
                     ? "bg-green-100 text-green-600"
-                    : status === "Inactive"
-                    ? "bg-yellow-100 text-yellow-600"
-                    : "bg-red-100 text-red-500"
+                    : "bg-yellow-100 text-yellow-600"
                 }`}>
                   {status}
                 </span>
