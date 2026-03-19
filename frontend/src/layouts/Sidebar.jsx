@@ -1,4 +1,4 @@
-import { NavLink } from "react-router";
+import { NavLink, useNavigate } from "react-router";
 
 const menuItems = [
   { name: "Dashboard", path: "/admin", icon: "🏠" },
@@ -10,12 +10,27 @@ const menuItems = [
 ];
 
 export default function Sidebar() {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    // ✅ Remove JWT
+    localStorage.removeItem("jwt");
+
+    // ✅ Remove image (optional)
+    localStorage.removeItem("adminImage");
+
+    // ✅ Redirect to home
+    navigate("/", { replace: true });
+
+    // ✅ Hard refresh (important)
+    window.location.reload();
+  };
+
   return (
     <div className="w-64 bg-gray-900 text-gray-300 min-h-screen p-5 flex flex-col">
 
-      
+      {/* PROFILE */}
       <div className="flex items-center gap-3 mb-8 border-b border-gray-700 pb-5">
-
         <img
           src="https://i.pravatar.cc/100?img=12"
           alt="admin"
@@ -24,14 +39,12 @@ export default function Sidebar() {
 
         <div>
           <h2 className="text-white font-semibold text-sm">Amit Admin</h2>
-          <p className="text-xs text-gray-400">Super Admin</p>
+          <p className="text-xs text-gray-400">Admin</p>
         </div>
-
       </div>
 
-    
+      {/* MENU */}
       <nav className="flex-1 space-y-2">
-
         {menuItems.map((item) => (
           <NavLink
             key={item.name}
@@ -48,10 +61,13 @@ export default function Sidebar() {
             {item.name}
           </NavLink>
         ))}
-
       </nav>
 
-      <button className="mt-auto bg-red-500 hover:bg-red-600 text-white py-2 rounded-lg text-sm font-medium transition">
+      {/* LOGOUT */}
+      <button
+        onClick={handleLogout}
+        className="mt-auto bg-red-500 hover:bg-red-600 text-white py-2 rounded-lg text-sm font-medium transition"
+      >
         🚪 Logout
       </button>
 

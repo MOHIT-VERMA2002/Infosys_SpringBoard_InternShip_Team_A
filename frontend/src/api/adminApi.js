@@ -115,3 +115,11 @@ export const getTodayBookings = async () => {
     throw error.response?.data || { message: "Failed to fetch bookings" };
   }
 };
+export const getAdminProfile = async () => {
+  try {
+    const res = await api.get("/admin/profile");
+    return res.data;
+  } catch (error) {
+    throw error.response?.data || { message: "Failed to fetch profile" };
+  }
+};

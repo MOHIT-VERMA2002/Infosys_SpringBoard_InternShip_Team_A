@@ -1,30 +1,68 @@
 import AdminLayout from "@/layouts/AdminLayout";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getAdminProfile } from "@/api/adminApi"; 
 
 export default function AdminProfile() {
+
+  const [loading, setLoading] = useState(true);
 
   const [image, setImage] = useState(
     localStorage.getItem("adminImage") || ""
   );
 
   const [form, setForm] = useState({
-    name: "Amit Admin",
-    email: "admin@mail.com",
-    phone: "9876543210",
-    city: "Lucknow",
-    department: "Operations",
-    organization: "Smart Parking Pvt Ltd",
+    name: "",
+    email: "",
+    phone: "",
+    city: "",
+    address: "",
     password: ""
   });
 
-  const staticData = {
-    adminId: "ADM-1025",
-    role: "Admin",
-    createdAt: "10 Jan 2025",
-    lastLogin: "21 Feb 2026, 10:45 AM",
+  const [adminInfo, setAdminInfo] = useState({
+    adminId: "",
+    role: "",
+    createdAt: "",
+    lastLogin: "N/A",
     status: "Active"
-  };
+  });
 
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const data = await getAdminProfile();
+
+        setForm({
+          name: data.name || "",
+          email: data.email || "",
+          phone: data.phone || "",
+          city: data.addresses?.city || "",
+          address: data.addresses?.addressLine || "",
+          password: ""
+        });
+
+        setAdminInfo({
+          adminId: data.customId, 
+          role: data.roles?.join(", ") || "ADMIN",
+          createdAt: formatDate(data.createdAt),
+          lastLogin: data.lastLogin
+            ? formatDateTime(data.lastLogin)
+            : "N/A",
+          status: "Active"
+        });
+
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, []);
+
+  
   const handleImage = (e) => {
     const file = e.target.files[0];
     const url = URL.createObjectURL(file);
@@ -34,6 +72,29 @@ export default function AdminProfile() {
 
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
+
+
+  const formatDate = (date) => {
+    return new Date(date).toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric"
+    });
+  };
+
+  const formatDateTime = (date) => {
+    return new Date(date).toLocaleString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  };
+
+  if (loading) {
+    return <div className="text-center p-10">Loading profile...</div>;
+  }
 
   return (
     <AdminLayout>
@@ -59,22 +120,22 @@ export default function AdminProfile() {
 
           <div>
             <h2 className="text-xl font-semibold">{form.name}</h2>
-            <p className="text-gray-500">{staticData.role}</p>
+            <p className="text-gray-500">{adminInfo.role}</p>
             <p className="text-gray-400 text-sm">{form.email}</p>
 
             <span className="inline-block mt-2 text-xs bg-green-100 text-green-600 px-3 py-1 rounded-full">
-              {staticData.status}
+              {adminInfo.status}
             </span>
           </div>
 
         </div>
 
-        {/* ADMIN INFO (READ ONLY) */}
+        {/* ADMIN INFO */}
         <Section title="Admin Information">
-          <ReadOnly label="Admin ID" value={staticData.adminId}/>
-          <ReadOnly label="Role" value={staticData.role}/>
-          <ReadOnly label="Account Created" value={staticData.createdAt}/>
-          <ReadOnly label="Last Login" value={staticData.lastLogin}/>
+          <ReadOnly label="Admin ID" value={adminInfo.adminId}/>
+          <ReadOnly label="Role" value={adminInfo.role}/>
+          <ReadOnly label="Account Created" value={adminInfo.createdAt}/>
+          <ReadOnly label="Last Login" value={adminInfo.lastLogin}/>
         </Section>
 
         {/* PERSONAL INFO */}
@@ -83,29 +144,15 @@ export default function AdminProfile() {
           <Input label="Email" name="email" value={form.email} onChange={handleChange}/>
           <Input label="Phone" name="phone" value={form.phone} onChange={handleChange}/>
           <Input label="City" name="city" value={form.city} onChange={handleChange}/>
+          <Input label="Address" name="address" value={form.address} onChange={handleChange}/>
         </Section>
-
-        {/* ORGANIZATION */}
-        <Section title="Organization Details">
-          <Input label="Department" name="department" value={form.department} onChange={handleChange}/>
-          <Input label="Organization" name="organization" value={form.organization} onChange={handleChange}/>
-        </Section>
-
-        {/* SECURITY */}
-        <Section title="Security">
-          <Input label="New Password" name="password" value={form.password} onChange={handleChange}/>
-        </Section>
-
-        <button className="bg-teal-600 text-white px-6 py-3 rounded-xl hover:bg-teal-700">
-          Save Changes
-        </button>
-
       </div>
 
     </AdminLayout>
   );
 }
 
+// 🔹 Reusable Components
 const Section = ({ title, children }) => (
   <div className="bg-white p-6 rounded-2xl shadow space-y-4">
     <h3 className="text-lg font-semibold text-gray-700">{title}</h3>
