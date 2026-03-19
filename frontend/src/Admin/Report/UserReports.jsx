@@ -3,45 +3,55 @@ import AdminLayout from "@/components/layout/AdminLayout";
 import ReportCard from "./ReportCard";
 import Chart from "react-apexcharts";
 import { Search, Crown } from "lucide-react";
+import { getAllUsers, getUserDetails } from "@/services/api";
 
 export default function UserReports() {
 
-  const [bookings, setBookings] = useState([]);
+  const [usersData, setUsersData] = useState([]);
   const [selectedUser, setSelectedUser] = useState("");
   const [search, setSearch] = useState("");
-
-  const usersMaster = [{
-    name:"Rahul",
-    phone:"9876543210",
-    joinDate:"2025-01-10",
-    address:"Lucknow",
-    card:"****4587",
-    type:"Premium"
-  }];
+  const [profile, setProfile] = useState(null);
 
   useEffect(()=>{
-
-    const data = Array.from({ length: 12 }, (_, i) => ({
-      user:["Rahul","Amit","Sara"][i%3],
-      amount:100+i*20,
-      date:`2026-02-${10+i}`
-    }));
-
-    setBookings(data);
-    setSelectedUser("Rahul");
-
+    fetchUsers();
   },[]);
 
-  const users = [...new Set(bookings.map(b=>b.user))];
+  useEffect(()=>{
+    if(selectedUser) fetchUserDetails(selectedUser);
+  },[selectedUser]);
 
-  const filtered = users.filter(u=>u.toLowerCase().includes(search.toLowerCase()));
-  const data = bookings.filter(b=>b.user===selectedUser);
-  const profile = usersMaster.find(u=>u.name===selectedUser);
-  const totalSpent = data.reduce((a,b)=>a+b.amount,0);
+  const fetchUsers = async () => {
+    try{
+      const res = await getAllUsers();
+      const list = res?.data || res || [];
+      setUsersData(list);
+      if(list.length > 0) setSelectedUser(list[0].customId);
+    }catch(e){console.error(e);}
+  };
+
+  const fetchUserDetails = async (id) => {
+    try{
+      const res = await getUserDetails(id);
+      setProfile(res?.data || res);
+    }catch(e){console.error(e);}
+  };
+
+  const users = usersData.map(u=>({
+    id:u.customId,
+    name:u.name
+  }));
+
+  const filtered = users.filter(u=>
+    u.name?.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const data = profile?.bookingHistory || [];
+  const totalSpent = profile?.totalSpent || 0;
+  const lastVisit = data.length ? data[data.length - 1].date : "-";
 
   const chart = {
-    series: data.map(d=>d.amount),
-    options:{ labels:data.map(d=>d.date) }
+    series: data.length ? data.map(d=>d.amount) : [0],
+    options:{ labels: data.length ? data.map(d=>d.date) : ["No Data"] }
   };
 
   return (
@@ -54,13 +64,13 @@ export default function UserReports() {
 
       <div className="flex gap-2 flex-wrap p-4">
         {filtered.map(u => (
-          <button key={u} onClick={()=>setSelectedUser(u)} className="bg-gray-200 px-3 py-2 rounded flex gap-1">
-            {u==="Rahul" && <Crown size={14}/>} {u}
+          <button key={u.id} onClick={()=>setSelectedUser(u.id)} className="bg-gray-200 px-3 py-2 rounded flex gap-1">
+            {u.name==="Rahul" && <Crown size={14}/>} {u.name}
           </button>
         ))}
       </div>
 
-      <ReportCard title={`User 360° – ${selectedUser}`}>
+      <ReportCard title={`User 360° – ${profile?.name || ""}`}>
 
         <div className="grid lg:grid-cols-3 gap-6">
 
@@ -68,17 +78,17 @@ export default function UserReports() {
 
             {profile && (
               <div className="bg-gray-100 p-4 rounded">
-                <p>📅 {profile.joinDate}</p>
+                <p>📅 {profile.joinedDate}</p>
                 <p>📞 {profile.phone}</p>
-                <p>🏠 {profile.address}</p>
-                <p>💳 {profile.card}</p>
+                <p>🏠 {profile.address?.city}</p>
+                <p>🚗 {profile.vehicle}</p>
               </div>
             )}
 
             <div className="grid grid-cols-3 gap-4">
-              <Stat label="Bookings" value={data.length}/>
+              <Stat label="Bookings" value={profile?.totalBookings}/>
               <Stat label="Spent" value={`₹${totalSpent}`}/>
-              <Stat label="Last Visit" value={data.at(-1)?.date}/>
+              <Stat label="Last Visit" value={lastVisit}/>
             </div>
 
             <Table rows={data}/>
@@ -96,12 +106,27 @@ export default function UserReports() {
 }
 
 const Stat = ({label,value}) => (
-  <div className="bg-blue-50 p-4 rounded"><p>{label}</p><h3>{value}</h3></div>
+  <div className="bg-blue-50 p-4 rounded">
+    <p>{label}</p>
+    <h3>{value}</h3>
+  </div>
 );
 
 const Table = ({ rows }) => (
   <table className="w-full text-sm">
-    <thead><tr><th>Amount</th><th>Date</th></tr></thead>
-    <tbody>{rows.map((r,i)=>(<tr key={i}><td>₹{r.amount}</td><td>{r.date}</td></tr>))}</tbody>
+    <thead>
+      <tr>
+        <th>Amount</th>
+        <th>Date</th>
+      </tr>
+    </thead>
+    <tbody>
+      {rows.map((r,i)=>(
+        <tr key={i}>
+          <td>₹{r.amount}</td>
+          <td>{r.date}</td>
+        </tr>
+      ))}
+    </tbody>
   </table>
-);
+);  

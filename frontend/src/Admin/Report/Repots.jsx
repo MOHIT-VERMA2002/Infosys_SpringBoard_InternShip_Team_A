@@ -1,298 +1,224 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import ReportCard from "./ReportCard";
-import { Search, CalendarDays, Download } from "lucide-react";
+import Chart from "react-apexcharts";
+import { Search, Crown } from "lucide-react";
+import { getAllUsers, getUserDetails } from "@/api/adminApi";
 import AdminLayout from "@/layouts/AdminLayout";
 
-import autoTable from "jspdf-autotable";
 import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
-export default function Reports() {
+export default function UserReports() {
 
-  const [section, setSection] = useState("parking");
-  const [bookings, setBookings] = useState([]);
+  const [usersData, setUsersData] = useState([]);
+  const [selectedUser, setSelectedUser] = useState("");
   const [search, setSearch] = useState("");
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [selectedParking, setSelectedParking] = useState(null);
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  const usersMaster = [
-    {
-      name: "Rahul",
-      phone: "9876543210",
-      email: "rahul@mail.com",
-      joinDate: "2025-01-10",
-      vehicles: ["UP32AB1234"],
-    },
-    {
-      name: "Amit",
-      phone: "9999999999",
-      email: "amit@mail.com",
-      joinDate: "2024-12-01",
-      vehicles: ["UP32CD5678"],
+  useEffect(()=>{
+    fetchUsers();
+  },[]);
+
+  useEffect(()=>{
+    if(selectedUser) fetchUserDetails(selectedUser);
+  },[selectedUser]);
+
+  const fetchUsers = async () => {
+    try{
+      setLoading(true);
+      const res = await getAllUsers();
+      const list = res?.data || res || [];
+
+      setUsersData(list);
+
+      if(list.length > 0){
+        setSelectedUser(list[0].customId || list[0]._id);
+      }
+
+    }catch(e){console.error(e);}
+    finally{setLoading(false);}
+  };
+
+  const fetchUserDetails = async (id) => {
+    try{
+      setLoading(true);
+      const res = await getUserDetails(id);
+      setProfile(res?.data || res);
+    }catch(e){console.error(e);}
+    finally{setLoading(false);}
+  };
+
+  const users = usersData.map(u=>({
+    id: u.customId || u._id,
+    name: u.name || "Unknown"
+  }));
+
+  const filtered = users.filter(u=>
+    u.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const data = profile?.bookingHistory || [];
+  const totalSpent = profile?.totalSpent || 0;
+
+  const lastVisit = data.length
+    ? [...data].sort((a,b)=> new Date(b.date) - new Date(a.date))[0]?.date
+    : "-";
+
+  const chart = {
+    series: data.length ? data.map(d => Number(d.amount) || 0) : [1],
+    options: {
+      labels: data.length ? data.map(d => d.date || "N/A") : ["No Data"]
     }
-  ];
+  };
 
-  const parkingMaster = [
-    {
-      name: "Phoenix Mall",
-      slots: 500,
-      location: "Lucknow",
-      owner: "Phoenix Group"
-    },
-    {
-      name: "Airport",
-      slots: 300,
-      location: "Lucknow Airport",
-      owner: "AAI"
-    }
-  ];
+  // ✅ DATE FORMAT
+  const formatDate = (date) => {
+    return new Date(date).toLocaleString("en-IN");
+  };
 
-  useEffect(() => {
+  // ✅ PDF DOWNLOAD
+  const downloadPDF = () => {
 
-    const users = ["Rahul","Amit","Sara","John"];
-    const parkings = ["Phoenix Mall","Airport"];
-
-    const data = Array.from({ length: 20 }, (_, i) => ({
-      id: i + 1,
-      user: users[i % users.length],
-      parking: parkings[i % parkings.length],
-      car: `UP32 AB 12${i}`,
-      amount: 100 + i * 20,
-      date: new Date(Date.now() - i * 86400000)
-    }));
-
-    setBookings(data);
-
-    /* default selection = first element */
-    setSelectedUser(users[0]);
-    setSelectedParking(parkings[0]);
-
-  }, []);
-
-  const last7DaysData = useMemo(() => {
-    const last7 = new Date();
-    last7.setDate(last7.getDate() - 7);
-    return bookings.filter(b => new Date(b.date) >= last7);
-  }, [bookings]);
-
-  const users = [...new Set(last7DaysData.map(b => b.user))];
-  const parkings = [...new Set(last7DaysData.map(b => b.parking))];
-
-  const userBookings = last7DaysData.filter(b => b.user === selectedUser);
-  const parkingBookings = last7DaysData.filter(b => b.parking === selectedParking);
-
-  const selectedUserData = usersMaster.find(u => u.name === selectedUser);
-  const selectedParkingData = parkingMaster.find(p => p.name === selectedParking);
-
-  const downloadPDF = (rows, fileName, userDetails = null, parkingDetails = null) => {
-
-    if (!rows.length) return;
+    if (!profile) return;
 
     const doc = new jsPDF();
 
     doc.setFontSize(16);
-    doc.text(`${fileName} Report`, 14, 15);
+    doc.text(`${profile.name} Report`, 14, 15);
 
     let startY = 25;
 
-    if (userDetails) {
+    doc.setFontSize(11);
+    doc.text(`Phone: ${profile.phone}`, 14, startY);
+    doc.text(`Email: ${profile.email}`, 14, startY + 7);
+    doc.text(`City: ${profile.address?.city || "-"}`, 14, startY + 14);
+    doc.text(`Vehicle: ${profile.vehicle || "-"}`, 14, startY + 21);
 
-      doc.setFontSize(12);
+    startY += 30;
 
-      doc.text(`Name: ${userDetails.name}`, 14, startY);
-      doc.text(`Phone: ${userDetails.phone}`, 14, startY + 8);
-      doc.text(`Email: ${userDetails.email}`, 14, startY + 16);
-      doc.text(`Joined: ${userDetails.joinDate}`, 14, startY + 24);
-      doc.text(`Vehicles: ${userDetails.vehicles.join(", ")}`, 14, startY + 32);
-
-      startY += 40;
-    }
-
-    if (parkingDetails) {
-
-      doc.setFontSize(12);
-
-      doc.text(`Parking Name: ${parkingDetails.name}`, 14, startY);
-      doc.text(`Total Slots: ${parkingDetails.slots}`, 14, startY + 8);
-      doc.text(`Location: ${parkingDetails.location}`, 14, startY + 16);
-      doc.text(`Owner: ${parkingDetails.owner}`, 14, startY + 24);
-
-      startY += 35;
-    }
-
-    const tableData = rows.map((r) => [
+    const tableData = data.map(r => [
       r.user,
       r.parking,
       r.car,
       `₹${r.amount}`,
-      new Date(r.date).toLocaleDateString()
+      formatDate(r.date)
     ]);
 
     autoTable(doc, {
-      head: [["User", "Parking", "Car", "Amount", "Date"]],
+      head: [["User","Parking","Car","Amount","Date"]],
       body: tableData,
-      startY: startY,
+      startY: startY
     });
 
-    doc.save(`${fileName}-report.pdf`);
+    doc.save(`${profile.name}-report.pdf`);
   };
 
   return (
     <AdminLayout>
 
-      <h1 className="text-3xl font-bold mb-6">Reports</h1>
+      <h1 className="text-3xl font-bold mb-6">User Reports</h1>
 
-      <div className="flex gap-3 mb-5">
-        <Tab id="parking" label="Parking" {...{section,setSection}}/>
-        <Tab id="users" label="Users" {...{section,setSection}}/>
-      </div>
-
+      {/* 🔍 SEARCH */}
       <div className="sticky top-0 z-10 bg-white pb-4">
         <div className="flex items-center gap-3 border rounded-xl px-4 py-3 shadow-sm">
           <Search size={18} className="text-gray-400"/>
           <input
-            placeholder={`Search ${section}...`}
+            placeholder="Search user..."
             className="w-full outline-none"
-            onChange={(e)=>setSearch(e.target.value)}
+            onChange={e=>setSearch(e.target.value)}
           />
-          <CalendarDays size={18} className="text-gray-400"/>
-          <span className="text-xs text-gray-500">Last 7 days</span>
         </div>
       </div>
 
-      {section === "parking" && (
-        <>
-          <List
-            items={parkings.filter(p=>p.toLowerCase().includes(search.toLowerCase()))}
-            onSelect={setSelectedParking}
-          />
+      {/* 👥 USER LIST */}
+      <div className="flex gap-2 flex-wrap my-4">
+        {filtered.map(u => (
+          <button
+            key={u.id}
+            onClick={()=>setSelectedUser(u.id)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium
+              ${selectedUser === u.id
+                ? "bg-blue-600 text-white shadow"
+                : "bg-gray-100 hover:bg-blue-50 hover:text-blue-600"}
+            `}
+          >
+            {u.name==="Rahul" && <Crown size={14} className="inline mr-1"/>}
+            {u.name}
+          </button>
+        ))}
+      </div>
 
-          {selectedParking && (
-            <ReportCard
-              title={`Parking 360° – ${selectedParking}`}
-              action={
-                <DownloadBtn 
-                  onClick={() => downloadPDF(parkingBookings, selectedParking, null, selectedParkingData)}
-                />
-              }
+      {/* ⏳ LOADING */}
+      {loading && <p className="p-4 text-gray-500">Loading...</p>}
+
+      {/* 📊 REPORT */}
+      {!loading && profile && (
+        <ReportCard 
+          title={`User 360° – ${profile.name}`}
+          action={
+            <button
+              onClick={downloadPDF}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm"
             >
-              <Stats rows={parkingBookings}/>
-              <Parking360 name={selectedParking} bookings={parkingBookings}/>
-              <Table rows={parkingBookings}/>
-            </ReportCard>
-          )}
-        </>
-      )}
+              Download PDF
+            </button>
+          }
+        >
 
-      {section === "users" && (
-        <>
-          <List
-            items={users.filter(u=>u.toLowerCase().includes(search.toLowerCase()))}
-            onSelect={setSelectedUser}
-          />
+          <div className="grid lg:grid-cols-3 gap-6">
 
-          {selectedUser && (
-            <ReportCard
-              title={`User 360° – ${selectedUser}`}
-              action={
-                <DownloadBtn 
-                  onClick={() => downloadPDF(userBookings, selectedUser, selectedUserData)}
-                />
-              }
-            >
-              <Stats rows={userBookings}/>
-              <User360 user={selectedUserData} bookings={userBookings}/>
-              <Table rows={userBookings}/>
-            </ReportCard>
-          )}
-        </>
+            <div className="lg:col-span-2 space-y-4">
+
+              {/* USER INFO */}
+              <div className="bg-gray-50 p-4 rounded-xl space-y-2">
+                <p>📅 Joined: {profile.joinedDate || "-"}</p>
+                <p>📞 {profile.phone || "-"}</p>
+                <p>📧 {profile.email || "-"}</p>
+                <p>🏠 {profile.address?.city || "-"}</p>
+                <p>🚗 {profile.vehicle || "-"}</p>
+              </div>
+
+              {/* STATS */}
+              <div className="grid sm:grid-cols-3 gap-4">
+                <Stat label="Bookings" value={profile.totalBookings || 0}/>
+                <Stat label="Revenue" value={`₹${totalSpent}`}/>
+                <Stat label="Last Visit" value={formatDate(lastVisit)}/>
+              </div>
+
+              {/* TABLE */}
+              <Table rows={data}/>
+
+            </div>
+
+            {/* 📈 CHART */}
+            <div className="bg-white rounded-xl shadow p-4">
+              <Chart
+                options={chart.options}
+                series={chart.series}
+                type="donut"
+                height={280}
+              />
+            </div>
+
+          </div>
+
+        </ReportCard>
       )}
 
     </AdminLayout>
   );
 }
 
-const DownloadBtn = ({ onClick }) => (
-  <button
-    onClick={onClick}
-    className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700"
-  >
-    <Download size={16}/> Download PDF
-  </button>
-);
-
-const Tab = ({ id, label, section, setSection }) => (
-  <button
-    onClick={() => setSection(id)}
-    className={`px-5 py-2.5 rounded-xl text-sm font-medium
-      ${section === id
-        ? "bg-blue-600 text-white shadow"
-        : "bg-gray-100 hover:bg-gray-200"}
-    `}
-  >
-    {label}
-  </button>
-);
-
-const List = ({ items, onSelect }) => (
-  <div className="flex gap-2 flex-wrap my-4">
-    {items.map(i => (
-      <button
-        key={i}
-        onClick={() => onSelect(i)}
-        className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-blue-50 hover:text-blue-600"
-      >
-        {i}
-      </button>
-    ))}
-  </div>
-);
-
-const Stats = ({ rows }) => {
-  const revenue = rows.reduce((a,b)=>a+b.amount,0);
-  return (
-    <div className="grid sm:grid-cols-3 gap-4">
-      <Card label="Bookings" value={rows.length}/>
-      <Card label="Revenue" value={`₹${revenue}`}/>
-      <Card label="Vehicles" value={[...new Set(rows.map(r=>r.car))].length}/>
-    </div>
-  );
-};
-
-const Card = ({ label, value }) => (
+// ✅ STAT
+const Stat = ({label,value}) => (
   <div className="bg-blue-50 p-4 rounded-xl">
     <p className="text-sm text-gray-600">{label}</p>
     <h3 className="text-xl font-bold text-blue-700">{value}</h3>
   </div>
 );
 
-const User360 = ({ user, bookings }) => {
-  const totalSpent = bookings.reduce((a,b)=>a+b.amount,0);
-  return (
-    <div className="bg-gray-50 p-4 rounded-xl space-y-2">
-      {user && (
-        <>
-          <p>📞 {user.phone}</p>
-          <p>📧 {user.email}</p>
-          <p>📅 Joined: {user.joinDate}</p>
-          <p>🚗 Vehicles: {user.vehicles.join(", ")}</p>
-        </>
-      )}
-      <p className="font-semibold">💰 Total Spent: ₹{totalSpent}</p>
-    </div>
-  );
-};
-
-const Parking360 = ({ name, bookings }) => {
-  const revenue = bookings.reduce((a,b)=>a+b.amount,0);
-  return (
-    <div className="bg-gray-50 p-4 rounded-xl space-y-2">
-      <p className="font-semibold">{name}</p>
-      <p>Total Slots: 500</p>
-      <p>Revenue: ₹{revenue}</p>
-    </div>
-  );
-};
-
+// ✅ FULL DETAIL TABLE
 const Table = ({ rows }) => (
   <div className="overflow-x-auto mt-4 border rounded-xl">
     <table className="w-full text-sm">
@@ -306,13 +232,13 @@ const Table = ({ rows }) => (
         </tr>
       </thead>
       <tbody>
-        {rows.map((r) => (
-          <tr key={r.id} className="border-t">
+        {rows.map((r,i)=>(
+          <tr key={i} className="border-t">
             <td className="p-3">{r.user}</td>
             <td className="p-3">{r.parking}</td>
             <td className="p-3">{r.car}</td>
-            <td className="p-3 text-green-600">₹{r.amount}</td>
-            <td className="p-3">{new Date(r.date).toLocaleDateString()}</td>
+            <td className="p-3 text-green-600 font-medium">₹{r.amount}</td>
+            <td className="p-3">{new Date(r.date).toLocaleString()}</td>
           </tr>
         ))}
       </tbody>
