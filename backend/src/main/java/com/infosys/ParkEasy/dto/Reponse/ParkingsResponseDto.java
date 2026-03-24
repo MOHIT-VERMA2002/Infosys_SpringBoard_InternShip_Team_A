@@ -16,4 +16,6 @@ public class ParkingsResponseDto {
     private Long evAvailable;
     private Double parkingPrice;
     private Double evPrice;
+    private Double latitude;
+    private Double longitude;
 }

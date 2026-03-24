@@ -2,7 +2,6 @@ package com.infosys.ParkEasy.repository;
 
 import com.infosys.ParkEasy.entity.ParkingSpot;
 import com.infosys.ParkEasy.entity.type.SlotType;
-import com.infosys.ParkEasy.entity.type.SpotStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 

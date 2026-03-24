@@ -1,7 +1,5 @@
 package com.infosys.ParkEasy.dto.Request;
 
-
-import jakarta.persistence.Column;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 

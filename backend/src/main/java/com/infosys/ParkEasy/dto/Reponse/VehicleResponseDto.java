@@ -1,6 +1,5 @@
 package com.infosys.ParkEasy.dto.Reponse;
 
-import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 
 @Data

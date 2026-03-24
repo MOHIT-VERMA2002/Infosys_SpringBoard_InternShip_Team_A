@@ -1,8 +1,6 @@
 package com.infosys.ParkEasy.dto.Reponse;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.infosys.ParkEasy.dto.Reponse.AddressResponseDto;
-import com.infosys.ParkEasy.dto.Reponse.VehicleResponseDto;
 import com.infosys.ParkEasy.entity.type.RoleType;
 import lombok.Data;
 

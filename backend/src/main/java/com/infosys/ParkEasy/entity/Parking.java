@@ -40,6 +40,11 @@ public class Parking {
 
     @Enumerated(EnumType.STRING)
     private ParkingType parkingType;
+    @Column(nullable = false)
+    private Double latitude;
+
+    @Column(nullable = false)
+    private Double longitude;
 
     @OneToMany(mappedBy = "parking", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference

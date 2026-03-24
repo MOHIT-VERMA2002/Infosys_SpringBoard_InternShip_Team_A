@@ -63,6 +63,8 @@ public class AdminServiceImp implements AdminService {
         parking.setCloseTime(dto.getCloseTime());
         parking.setEvEnabled(dto.getEvEnabled());
         parking.setEvPrice(dto.getEvPrice());
+        parking.setLatitude(dto.getLatitude());
+        parking.setLongitude(dto.getLongitude());
         parking.setParkingType(dto.getParkingType());
 
         Parking savedParking=parkingRepository.save(parking);

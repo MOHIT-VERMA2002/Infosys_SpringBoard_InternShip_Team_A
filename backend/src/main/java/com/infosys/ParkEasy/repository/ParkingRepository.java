@@ -41,11 +41,17 @@ SELECT new com.infosys.ParkEasy.dto.Reponse.ParkingsResponseDto(
     THEN 1 ELSE 0 END),
 
     p.price,
-    p.evPrice
+    p.evPrice,
+
+    p.latitude,
+    p.longitude
 )
 FROM Parking p
 LEFT JOIN p.spots ps
-GROUP BY p.id, p.parkingName, p.address, p.price, p.evPrice
+GROUP BY 
+    p.id, p.parkingName, p.address, 
+    p.price, p.evPrice,
+    p.latitude, p.longitude
 """)
     List<ParkingsResponseDto> getRealtimeParkingStatus();
 
@@ -82,12 +88,18 @@ SELECT new com.infosys.ParkEasy.dto.Reponse.ParkingsResponseDto(
     THEN 1 ELSE 0 END),
 
     p.price,
-    p.evPrice
+    p.evPrice,
+
+    p.latitude,
+    p.longitude
 )
 FROM Parking p
 LEFT JOIN p.spots ps
 WHERE p.id = :parkingId
-GROUP BY p.id, p.parkingName, p.address, p.price, p.evPrice
+GROUP BY 
+    p.id, p.parkingName, p.address, 
+    p.price, p.evPrice,
+    p.latitude, p.longitude
 """)
     ParkingsResponseDto getParkingRealtimeStatus(@Param("parkingId") Long parkingId);
 
