@@ -32,8 +32,8 @@ public class AdminController {
     }
 
     @PostMapping("/parking")
-    public ResponseEntity<ParkingsResponseDto> registerParking(@RequestBody ParkingRequestDto parkingRequestDto){
-        ParkingsResponseDto saveParking=adminService.registerParking(parkingRequestDto);
+    public ResponseEntity<ParkingResponseDto> registerParking(@RequestBody ParkingRequestDto parkingRequestDto){
+        ParkingResponseDto saveParking=adminService.registerParking(parkingRequestDto);
        return ResponseEntity.status(HttpStatus.CREATED).body(saveParking);
     }
 
@@ -48,7 +48,7 @@ public class AdminController {
     }
 
     @GetMapping("/parkings")
-    public List<ParkingsResponseDto> getAll(){
+    public List<ParkingResponseDto> getAll(){
         return adminService.getAllParkings();
     }
 
@@ -75,5 +75,4 @@ public class AdminController {
     public ResponseEntity<AdminProfileResponseDto> getProfile(){
        return ResponseEntity.ok(adminService.getProfile());
     }
-
 }

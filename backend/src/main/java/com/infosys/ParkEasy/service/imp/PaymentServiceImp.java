@@ -46,20 +46,18 @@ public class PaymentServiceImp implements PaymentService {
                 .findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
-
     @Override
     @Transactional
     public String createPaymentOrder(BookingRequestDto dto) throws RazorpayException {
 
-        RazorpayClient client = new RazorpayClient(key_id,key_secret);
+        RazorpayClient client = new RazorpayClient(key_id, key_secret);
 
         JSONObject request = new JSONObject();
-        request.put("amount", dto.getAmount()*100);
-        request.put("currency","INR");
+        request.put("amount", dto.getAmount() * 100);
+        request.put("currency", "INR");
 
-        String receipt = UUID.randomUUID().toString().replace("-","").substring(0,16);
-
-        request.put("receipt",receipt);
+        String receipt = UUID.randomUUID().toString().replace("-", "").substring(0, 16);
+        request.put("receipt", receipt);
 
         Order razorOrder = client.orders.create(request);
 
@@ -92,8 +90,11 @@ public class PaymentServiceImp implements PaymentService {
                 .build();
 
         paymentOrderRepository.save(paymentOrder);
+        JSONObject response = new JSONObject();
+        response.put("order", razorOrder);
+        response.put("key", key_id);
 
-        return razorOrder.toString();
+        return response.toString();
     }
 
     @Override

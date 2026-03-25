@@ -4,6 +4,7 @@ import com.infosys.ParkEasy.dto.Reponse.*;
 import com.infosys.ParkEasy.dto.Request.FloorRequestDto;
 import com.infosys.ParkEasy.dto.Request.ParkingRequestDto;
 import com.infosys.ParkEasy.entity.*;
+import com.infosys.ParkEasy.entity.type.BookingType;
 import com.infosys.ParkEasy.entity.type.SlotType;
 import com.infosys.ParkEasy.entity.type.SpotStatus;
 import com.infosys.ParkEasy.repository.*;
@@ -17,8 +18,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -32,7 +32,6 @@ public class AdminServiceImp implements AdminService {
     private final PaymentOrderRepository paymentOrderRepository;
     private final ModelMapper modelMapper;
 
-    //Dashboard cards
     @Override
     public DashboardStatsResponseDto getDashboardStats(){
         List<Object[]> result=bookingRepository.getDashboardStats();
@@ -48,21 +47,28 @@ public class AdminServiceImp implements AdminService {
         );
     }
 
-    //Register parking
     @Override
     @Transactional
-    public ParkingsResponseDto registerParking(ParkingRequestDto dto){
+    public ParkingResponseDto registerParking(ParkingRequestDto dto){
         Parking parking=new Parking();
         parking.setParkingName(dto.getParkingName());
         parking.setAddress(dto.getAddress());
         parking.setCity(dto.getCity());
         parking.setPhone(dto.getPhone());
         parking.setPinCode(dto.getPinCode());
+        parking.setMonthlyBookingPrice(dto.getMonthlyBookingPrice());
         parking.setPrice(dto.getPrice());
         parking.setOpenTime(dto.getOpenTime());
         parking.setCloseTime(dto.getCloseTime());
         parking.setEvEnabled(dto.getEvEnabled());
         parking.setEvPrice(dto.getEvPrice());
+
+        Set<BookingType> types=dto.getBookingTypes();
+        if(types==null||types.isEmpty()){
+            types=new HashSet<>(Collections.singleton(BookingType.HOURLY));
+        }
+        parking.setBookingTypes(types);
+
         parking.setLatitude(dto.getLatitude());
         parking.setLongitude(dto.getLongitude());
         parking.setParkingType(dto.getParkingType());
@@ -134,19 +140,11 @@ public class AdminServiceImp implements AdminService {
         parkingSpotRepository.saveAll(spots);
 
         long totalSlots=spots.size();
-        long availableSlots=spots.stream()
-                .filter(s->s.getStatus()==SpotStatus.AVAILABLE)
-                .count();
+        long availableSlots=spots.stream().filter(s->s.getStatus()==SpotStatus.AVAILABLE).count();
+        long evStations=spots.stream().filter(s->s.getSlotType()==SlotType.EV).count();
+        long evAvailable=spots.stream().filter(s->s.getSlotType()==SlotType.EV&&s.getStatus()==SpotStatus.AVAILABLE).count();
 
-        long evStations=spots.stream()
-                .filter(s->s.getSlotType()==SlotType.EV)
-                .count();
-
-        long evAvailable=spots.stream()
-                .filter(s->s.getSlotType()==SlotType.EV&&s.getStatus()==SpotStatus.AVAILABLE)
-                .count();
-
-        ParkingsResponseDto response=modelMapper.map(savedParking,ParkingsResponseDto.class);
+        ParkingResponseDto response=modelMapper.map(savedParking, ParkingResponseDto.class);
         response.setParkingAddress(savedParking.getAddress());
         response.setParkingPrice(savedParking.getPrice());
         response.setTotalSlot(totalSlots);
@@ -157,11 +155,9 @@ public class AdminServiceImp implements AdminService {
         return response;
     }
 
-    //Update parking
     @Override
     public Parking updateParking(Long id,Parking parking){
         Parking existing=parkingRepository.findById(id).orElseThrow();
-
         existing.setParkingName(parking.getParkingName());
         existing.setAddress(parking.getAddress());
         existing.setCity(parking.getCity());
@@ -173,7 +169,6 @@ public class AdminServiceImp implements AdminService {
         existing.setEvEnabled(parking.getEvEnabled());
         existing.setEvPrice(parking.getEvPrice());
         existing.setParkingType(parking.getParkingType());
-
         return parkingRepository.save(existing);
     }
 
@@ -183,7 +178,7 @@ public class AdminServiceImp implements AdminService {
     }
 
     @Override
-    public List<ParkingsResponseDto> getAllParkings(){
+    public List<ParkingResponseDto> getAllParkings(){
         return parkingRepository.getRealtimeParkingStatus();
     }
 
@@ -192,10 +187,8 @@ public class AdminServiceImp implements AdminService {
         return parkingRepository.findById(id).orElseThrow();
     }
 
-    //User profile
     @Override
     public UserReportResponseDto getUserDetails(String customId){
-
         User user=userRepository.findByCustomId(customId)
                 .orElseThrow(()->new UsernameNotFoundException("User Not Exist"));
         UserReportResponseDto dto=new UserReportResponseDto();
@@ -211,115 +204,80 @@ public class AdminServiceImp implements AdminService {
         if(!user.getVehicles().isEmpty()){
             dto.setVehicle(user.getVehicles().iterator().next().getVehicleNumber());
         }
-        List<UserBookingReportRowDto> history=user.getBookings().stream()
-                .map(p->{
-
-                    Booking b=p.getBooking();
-                    UserBookingReportRowDto row=new UserBookingReportRowDto();
-                    row.setUser(user.getName());
-                    row.setParking(b.getParkingId());
-                    row.setCar(b.getVehicleNumber());
-                    row.setAmount(p.getAmount());
-                    row.setDate(b.getCreatedAt());
-                    return row;
-                }).toList();
+        List<UserBookingReportRowDto> history=user.getBookings().stream().map(p->{
+            Booking b=p.getBooking();
+            UserBookingReportRowDto row=new UserBookingReportRowDto();
+            row.setUser(user.getName());
+            row.setParking(b.getParkingId());
+            row.setCar(b.getVehicleNumber());
+            row.setAmount(p.getAmount());
+            row.setDate(b.getCreatedAt());
+            return row;
+        }).toList();
         dto.setBookingHistory(history);
         dto.setTotalBookings(history.size());
-        double total=history.stream()
-                .mapToDouble(UserBookingReportRowDto::getAmount)
-                .sum();
+        double total=history.stream().mapToDouble(UserBookingReportRowDto::getAmount).sum();
         dto.setTotalSpent(total);
         return dto;
     }
-    //Admin user list
+
     @Override
     public ResponseEntity<List<ManageUserResponseDto>> getAllUserDetails() {
-
         List<User> users = userRepository.findAll();
         List<ManageUserResponseDto> response = users.stream().map(user -> {
-
             ManageUserResponseDto dto = new ManageUserResponseDto();
             dto.setCustomId(user.getCustomId());
             dto.setName(user.getName());
             dto.setPhone(user.getPhone());
             dto.setUserStatusType(user.getStatusType());
-            dto.setVehicle(
-                    user.getVehicles()
-                            .stream()
-                            .findFirst()
-                            .map(Vehicle::getVehicleNumber)
-                            .orElse(null)
-            );
-            dto.setCityName(
-                    user.getAddresses()
-                            .stream()
-                            .findFirst()
-                            .map(Address::getCity)
-                            .orElse(null)
-            );
+            dto.setVehicle(user.getVehicles().stream().findFirst().map(Vehicle::getVehicleNumber).orElse(null));
+            dto.setCityName(user.getAddresses().stream().findFirst().map(Address::getCity).orElse(null));
             return dto;
         }).toList();
         return ResponseEntity.ok(response);
     }
-    //Dashboard charts
+
     @Override
     public DashboardResponse dashboard(){
-
         List<Object[]> bookingData = bookingRepository.monthlyBookings();
-
         List<Integer> bookings = new ArrayList<>();
         List<String> months = new ArrayList<>();
-
         for(Object[] row : bookingData){
             months.add(String.valueOf(row[0]));
             bookings.add(((Number)row[1]).intValue());
         }
 
-
         List<Object[]> hourlyData = bookingRepository.hourlyBookings();
-
         List<Integer> hourlyBookings = new ArrayList<>();
         List<String> hours = new ArrayList<>();
-
         for(Object[] row : hourlyData){
-
             int hour = ((Number)row[0]).intValue();
-
             String label;
             if(hour == 0) label = "12AM";
             else if(hour < 12) label = hour + "AM";
             else if(hour == 12) label = "12PM";
             else label = (hour - 12) + "PM";
-
             hours.add(label);
             hourlyBookings.add(((Number)row[1]).intValue());
         }
 
-
         List<Object[]> parkingData = bookingRepository.parkingBookings();
-
         List<Integer> locationBookings = new ArrayList<>();
         List<String> locations = new ArrayList<>();
-
         for(Object[] row : parkingData){
             locations.add("Parking " + row[0]);
             locationBookings.add(((Number)row[1]).intValue());
         }
 
-
         List<Object[]> revenueData = paymentOrderRepository.monthlyRevenue();
-
         List<Double> revenue = new ArrayList<>();
-
         for(Object[] row : revenueData){
             revenue.add(((Number)row[1]).doubleValue());
         }
 
-
         long dailyUsers = userRepository.countByCreatedAtAfter(LocalDateTime.now().minusDays(1));
         long weeklyUsers = userRepository.countByCreatedAtAfter(LocalDateTime.now().minusWeeks(1));
         long monthlyUsers = userRepository.countByCreatedAtAfter(LocalDateTime.now().minusMonths(1));
-
 
         return DashboardResponse.builder()
                 .months(months)
@@ -334,9 +292,9 @@ public class AdminServiceImp implements AdminService {
                 .monthlyUsers((int)monthlyUsers)
                 .build();
     }
+
     @Override
     public List<ParkingBookingResponseDto> getTodayBookings(){
-
         List<Booking> bookings=bookingRepository.findTodayBookings();
         return bookings.stream().map(b->{
             ParkingBookingResponseDto dto=new ParkingBookingResponseDto();
@@ -351,10 +309,9 @@ public class AdminServiceImp implements AdminService {
             return dto;
         }).toList();
     }
-    
+
     @Override
     public AdminProfileResponseDto getProfile() {
-
         String email = org.springframework.security.core.context.SecurityContextHolder
                 .getContext()
                 .getAuthentication()

@@ -16,7 +16,8 @@ public class BookingResponseDto {
     private String name;
     private String phone;
     private String vehicleNumber;
-
+    private String parkingName;
+    private String parkingCity;
     private Double amount;
 
     private String parkingId;

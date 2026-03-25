@@ -1,11 +1,12 @@
 package com.infosys.ParkEasy.dto.Request;
 
 import com.infosys.ParkEasy.entity.type.ParkingType;
+import com.infosys.ParkEasy.entity.type.BookingType;
 import jakarta.persistence.Column;
 import lombok.Data;
-
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Set;
 
 @Data
 public class ParkingRequestDto {
@@ -19,6 +20,7 @@ public class ParkingRequestDto {
     private Double price;
     private LocalTime openTime;
     private LocalTime closeTime;
+    private Double monthlyBookingPrice;
 
     private Boolean evEnabled;
     private Double evPrice;
@@ -29,6 +31,8 @@ public class ParkingRequestDto {
 
     @Column(nullable = false)
     private Double longitude;
+
+    private Set<BookingType> bookingTypes;
 
     private NormalSlotRequestDto normalSlots;
 

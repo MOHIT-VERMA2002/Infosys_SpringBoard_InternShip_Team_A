@@ -1,6 +1,6 @@
 package com.infosys.ParkEasy.controller;
 
-import com.infosys.ParkEasy.dto.Reponse.ParkingsResponseDto;
+import com.infosys.ParkEasy.dto.Reponse.ParkingResponseDto;
 import com.infosys.ParkEasy.service.Interface.ParkingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -18,12 +18,13 @@ public class ParkingController {
     private final ParkingService parkingService;
 
     @GetMapping("/all-parking")
-    public ResponseEntity<List<ParkingsResponseDto>> getAllParkings(){
-          return  parkingService.getParkings();
+    public ResponseEntity<List<ParkingResponseDto>> getAllParking(){
+          return  parkingService.getParking();
+
     }
 
     @GetMapping("/{parkingId}")
-    public ResponseEntity<ParkingsResponseDto> getParkingById(@PathVariable Long parkingId){
+    public ResponseEntity<ParkingResponseDto> getParkingById(@PathVariable Long parkingId){
        return parkingService.getParkingById(parkingId);
     }
 }

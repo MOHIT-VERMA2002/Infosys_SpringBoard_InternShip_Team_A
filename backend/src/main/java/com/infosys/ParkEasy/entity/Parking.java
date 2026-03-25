@@ -2,6 +2,7 @@ package com.infosys.ParkEasy.entity;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.infosys.ParkEasy.entity.type.BookingType;
 import com.infosys.ParkEasy.entity.type.ParkingType;
 import jakarta.persistence.*;
 import lombok.*;
@@ -9,7 +10,9 @@ import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -34,9 +37,11 @@ public class Parking {
 
     private LocalTime openTime;
     private LocalTime closeTime;
+    private Double monthlyBookingPrice;
 
     private Boolean evEnabled;
     private Double evPrice;
+    private Set<BookingType> bookingTypes=new HashSet<>();
 
     @Enumerated(EnumType.STRING)
     private ParkingType parkingType;
@@ -62,5 +67,4 @@ public class Parking {
     }
     @CreationTimestamp
     private LocalDateTime createAt;
-
 }

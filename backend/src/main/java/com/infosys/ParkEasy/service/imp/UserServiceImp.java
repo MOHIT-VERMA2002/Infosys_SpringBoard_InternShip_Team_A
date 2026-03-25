@@ -5,16 +5,8 @@ import com.infosys.ParkEasy.dto.Reponse.BookingResponseDto;
 import com.infosys.ParkEasy.dto.Reponse.PaymentHistory;
 import com.infosys.ParkEasy.dto.Reponse.UserProfileResponseDto;
 import com.infosys.ParkEasy.dto.Reponse.VehicleResponseDto;
-import com.infosys.ParkEasy.entity.Address;
-import com.infosys.ParkEasy.entity.Booking;
-import com.infosys.ParkEasy.entity.PaymentOrder;
-import com.infosys.ParkEasy.entity.User;
-import com.infosys.ParkEasy.entity.Vehicle;
-import com.infosys.ParkEasy.repository.AddressRepository;
-import com.infosys.ParkEasy.repository.BookingRepository;
-import com.infosys.ParkEasy.repository.PaymentOrderRepository;
-import com.infosys.ParkEasy.repository.UserRepository;
-import com.infosys.ParkEasy.repository.VehicleRepository;
+import com.infosys.ParkEasy.entity.*;
+import com.infosys.ParkEasy.repository.*;
 import com.infosys.ParkEasy.service.Interface.UserService;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -32,6 +24,7 @@ public class UserServiceImp implements UserService {
     private final UserRepository userRepository;
     private final BookingRepository bookingRepository;
     private final PaymentOrderRepository paymentOrderRepository;
+    private final ParkingRepository parkingRepository;
     private final VehicleRepository vehicleRepository;
     private final AddressRepository addressRepository;
     private final ModelMapper modelMapper;
@@ -49,18 +42,68 @@ public class UserServiceImp implements UserService {
 
     @Override
     public List<BookingResponseDto> getAllBooking(){
-        String email=SecurityContextHolder.getContext().getAuthentication().getName();
-        User user=userRepository.findByEmail(email).orElseThrow(()->new UsernameNotFoundException("User not Found"));
-        List<Booking> bookings=bookingRepository.findByUserId(user.getId());
-        return bookings.stream().map(b->modelMapper.map(b,BookingResponseDto.class)).toList();
+
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not Found"));
+
+        List<Booking> bookings = bookingRepository.findByUserId(user.getId());
+
+        return bookings.stream().map(b -> {
+
+            // ✅ Parking fetch using parkingId
+            Parking parking = null;
+            if(b.getParkingId() != null){
+                parking = parkingRepository.findById(Long.valueOf(b.getParkingId())).orElse(null);
+            }
+
+            return BookingResponseDto.builder()
+
+                    .bookingId(b.getBookingId())
+
+                    .name(b.getName())
+                    .phone(b.getPhone())
+                    .vehicleNumber(b.getVehicleNumber())
+
+                    .parkingId(b.getParkingId())
+                    .parkingName(parking != null ? parking.getParkingName() : "")
+                    .parkingCity(parking != null ? parking.getCity() : "")
+
+                    .amount(b.getAmount())
+                    .startTime(b.getStartTime())
+                    .endTime(b.getEndTime())
+                    .evStation(b.isEvStation())
+                    .paymentId(b.getPaymentId())
+                    .receiptId(b.getReceiptId())
+                    .status(b.getStatus())
+                    .createdAt(b.getCreatedAt())
+                    .spotNumber(b.getSpotNumber() != null ? b.getSpotNumber() : "")
+                    .floorName(b.getFloorName() != null ? b.getFloorName() : "")
+                    .slotType(b.getSlotType())
+
+                    .build();
+
+        }).toList();
     }
 
     @Override
     public List<PaymentHistory> getAllPaymentHistory(){
-        String email=SecurityContextHolder.getContext().getAuthentication().getName();
-        User user=userRepository.findByEmail(email).orElseThrow(()->new UsernameNotFoundException("User not Found"));
-        List<PaymentOrder> orders=paymentOrderRepository.findByUserId(user.getId());
-        return orders.stream().map(o->modelMapper.map(o,PaymentHistory.class)).toList();
+
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not Found"));
+        List<PaymentOrder> orders = paymentOrderRepository.findByUserId(user.getId());
+        return orders.stream().map(o -> {
+            PaymentHistory dto = new PaymentHistory();
+            dto.setId(o.getId());
+            dto.setPaymentId(o.getOrderId());
+            dto.setAmount(o.getAmount());
+            dto.setPaymentDate(o.getCreatedAt());
+            dto.setStatus(o.getStatus());
+            return dto;
+        }).toList();
     }
 
     public VehicleResponseDto addVehicle(Vehicle vehicle){
