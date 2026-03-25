@@ -1,58 +1,46 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FaSearch, FaDownload } from "react-icons/fa";
 import jsPDF from "jspdf";
-
-const paymentHistoryData = [
-  {
-    id: "TXN-1001",
-    location: "City Center Parking",
-    date: "20 Feb 2026",
-    time: "4:00 PM - 6:00 PM",
-    amount: 100,
-    method: "UPI (PhonePe)",
-    status: "Success",
-  },
-  {
-    id: "TXN-1002",
-    location: "Airport Parking",
-    date: "18 Feb 2026",
-    time: "9:00 AM - 12:00 PM",
-    amount: 240,
-    method: "Card",
-    status: "Success",
-  },
-  {
-    id: "TXN-1003",
-    location: "Karol Bagh Parking",
-    date: "15 Feb 2026",
-    time: "6:00 PM - 8:00 PM",
-    amount: 70,
-    method: "Wallet (Paytm)",
-    status: "Success",
-  },
-  {
-    id: "TXN-1004",
-    location: "Cyber City Parking",
-    date: "12 Feb 2026",
-    time: "10:00 AM - 12:00 PM",
-    amount: 140,
-    method: "UPI (Google Pay)",
-    status: "Failed",
-  },
-  {
-    id: "TXN-1005",
-    location: "Saket Mall Parking",
-    date: "10 Feb 2026",
-    time: "2:00 PM - 4:00 PM",
-    amount: 120,
-    method: "Card",
-    status: "Failed",
-  },
-];
+import { getPaymentHistory } from "@/api/userApi"; // ✅ ADD
 
 const PaymentHistory = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
+
+  const [paymentHistoryData, setPaymentHistoryData] = useState([]); // ✅ NEW
+
+  // ✅ FETCH FROM BACKEND
+  useEffect(() => {
+    const fetchPayments = async () => {
+      try {
+        const data = await getPaymentHistory();
+
+        const mapped = data.map((p) => ({
+          id: p.paymentId || p.id,
+          location: p.parkingName || "Parking",
+
+          // ✅ FIXED
+          date: p.paymentDate
+            ? new Date(p.paymentDate).toLocaleDateString()
+            : "",
+
+          time: p.paymentDate
+            ? new Date(p.paymentDate).toLocaleTimeString()
+            : "",
+
+          amount: p.amount || 0,
+          method: p.paymentMethod || "Online",
+          status: p.status === "SUCCESS" ? "Success" : "Failed",
+        }));
+
+        setPaymentHistoryData(mapped);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchPayments();
+  }, []);
 
   const filteredData = paymentHistoryData.filter((item) => {
     const matchSearch =
@@ -66,16 +54,18 @@ const PaymentHistory = () => {
 
   const totalAmount = paymentHistoryData.reduce(
     (sum, item) => sum + item.amount,
-    0
+    0,
   );
+
   const successAmount = paymentHistoryData
     .filter((i) => i.status === "Success")
     .reduce((sum, item) => sum + item.amount, 0);
+
   const failedAmount = paymentHistoryData
     .filter((i) => i.status === "Failed")
     .reduce((sum, item) => sum + item.amount, 0);
 
-  // ✅ Invoice Download Function
+  // ✅ Invoice Download Function (UNCHANGED)
   const downloadInvoice = (item) => {
     const doc = new jsPDF();
 
@@ -85,11 +75,11 @@ const PaymentHistory = () => {
     doc.setFontSize(12);
     doc.text(`Transaction ID: ${item.id}`, 20, 40);
     doc.text(`Location: ${item.location}`, 20, 50);
-    doc.text(`Date: ${item.date}`, 20, 60);
-    doc.text(`Time: ${item.time}`, 20, 70);
-    doc.text(`Payment Method: ${item.method}`, 20, 80);
-    doc.text(`Amount Paid: ₹${item.amount}`, 20, 90);
-    doc.text(`Status: ${item.status}`, 20, 100);
+    doc.text(`Date: ${item?.Date}`, 20, 60);
+    doc.text(`Time: ${item?.time}`, 20, 70);
+    doc.text(`Payment Method: ${item?.method}`, 20, 80);
+    doc.text(`Amount Paid: ₹${item?.amount}`, 20, 90);
+    doc.text(`Status: ${item?.status}`, 20, 100);
 
     doc.text("Thank you for using our parking service.", 20, 130);
 
@@ -109,21 +99,21 @@ const PaymentHistory = () => {
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white p-5 rounded-xl shadow border hover:shadow-md transition">
+          <div className="bg-white p-5 rounded-xl shadow border">
             <p className="text-gray-500 text-sm">Total Payments</p>
-            <h2 className="text-2xl font-bold text-gray-900">${totalAmount}</h2>
+            <h2 className="text-2xl font-bold text-gray-900">₹{totalAmount}</h2>
           </div>
 
-          <div className="bg-white p-5 rounded-xl shadow border hover:shadow-md transition">
+          <div className="bg-white p-5 rounded-xl shadow border">
             <p className="text-gray-500 text-sm">Successful Payments</p>
             <h2 className="text-2xl font-bold text-green-600">
-              ${successAmount}
+              ₹{successAmount}
             </h2>
           </div>
 
-          <div className="bg-white p-5 rounded-xl shadow border hover:shadow-md transition">
+          <div className="bg-white p-5 rounded-xl shadow border">
             <p className="text-gray-500 text-sm">Failed Payments</p>
-            <h2 className="text-2xl font-bold text-red-600">${failedAmount}</h2>
+            <h2 className="text-2xl font-bold text-red-600">₹{failedAmount}</h2>
           </div>
         </div>
 
@@ -172,10 +162,8 @@ const PaymentHistory = () => {
                   key={item.id}
                   className="border-b hover:bg-gray-50 transition text-sm"
                 >
-                  <td className="p-4 font-medium text-gray-800">{item.id}</td>
-
+                  <td className="p-4 font-medium">{item.id}</td>
                   <td className="p-4">{item.location}</td>
-
                   <td className="p-4">
                     {item.date}
                     <br />
@@ -209,7 +197,7 @@ const PaymentHistory = () => {
                   <td className="p-4">
                     <button
                       onClick={() => downloadInvoice(item)}
-                      className="flex items-center gap-2 bg-blue-600 text-white px-3 py-1.5 rounded-md text-xs hover:bg-blue-700 transition transform hover:scale-105"
+                      className="flex items-center gap-2 bg-blue-600 text-white px-3 py-1.5 rounded-md text-xs hover:bg-blue-700"
                     >
                       <FaDownload />
                       Invoice
