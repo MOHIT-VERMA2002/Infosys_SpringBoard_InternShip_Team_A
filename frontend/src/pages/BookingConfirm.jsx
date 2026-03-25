@@ -1,4 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
+import { createOrder, verifyPayment } from "@/api/paymentApi";
 
 const BookingConfirm = () => {
   const location = useLocation();
@@ -6,7 +7,41 @@ const BookingConfirm = () => {
 
   const booking = location.state;
 
-  // If user refreshes page or no state found
+  const handlePayment = async () => {
+    try {
+      const orderResponse = await createOrder(booking);
+
+      const orderData =
+        typeof orderResponse === "string"
+          ? JSON.parse(orderResponse)
+          : orderResponse;
+
+      const options = {
+        key: "YOUR_RAZORPAY_KEY",
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: "ParkEasy",
+        description: "Parking Booking",
+        order_id: orderData.id,
+
+        handler: async function (response) {
+          await verifyPayment(
+            response.razorpay_order_id,
+            response.razorpay_payment_id
+          ); // ❌ removed extra comma
+
+          alert("Payment Successful ✅");
+          navigate("/my-bookings");
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    } catch (err) {
+      alert("Payment Failed ❌");
+    }
+  };
+
   if (!booking) {
     return (
       <div className="p-10 text-center">
@@ -31,56 +66,23 @@ const BookingConfirm = () => {
         </h1>
 
         <div className="space-y-2 text-sm">
-          <p>
-            <strong>ID:</strong> {booking.id}
-          </p>
-          <p>
-            <strong>Parking:</strong> {booking.name}
-          </p>
-          <p>
-            <strong>Address:</strong> {booking.address}
-          </p>
-          <p>
-            <strong>Date:</strong> {booking.date}
-          </p>
-          <p>
-            <strong>Time:</strong> {booking.time}
-          </p>
-          <p>
-            <strong>Price:</strong> {booking.price}
-          </p>
-          <p>
-            <strong>Status:</strong>{" "}
-            <span className="text-green-600 font-semibold">
-              {booking.status}
-            </span>
-          </p>
+          <p><strong>Name:</strong> {booking.name}</p>
+          <p><strong>Phone:</strong> {booking.phone}</p>
+          <p><strong>Vehicle:</strong> {booking.vehicleNumber}</p>
+          <p><strong>Parking ID:</strong> {booking.parkingId}</p>
+          <p><strong>Amount:</strong> ₹{booking.amount}</p>
+          <p><strong>Starting Time:</strong> {new Date(booking.startDate).toLocaleString()}</p>
+          <p><strong>Ending Time:</strong> {new Date(booking.endDate).toLocaleString()}</p>
         </div>
-
-        {/* Show QR only if Active */}
-        {booking.status === "Active" && (
-          <div className="mt-6 text-center">
-            <div className="w-40 h-40 mx-auto bg-gray-200 flex items-center justify-center rounded-lg">
-              QR CODE
-            </div>
-            <p className="text-xs text-gray-500 mt-2">
-              Show this QR at parking entry
-            </p>
-          </div>
-        )}
-
+        <button
+          onClick={handlePayment}
+          className="w-full bg-green-600 text-white py-3 rounded-xl hover:bg-green-700"
+        >
+          Pay Now
+        </button>
         <button
           onClick={() => navigate(-1)}
-          className="w-full mt-6 
-  bg-gradient-to-r from-emerald-500 to-teal-600
-  text-white font-semibold text-lg
-  py-3
-  rounded-2xl
-  shadow-lg
-  hover:shadow-xl
-  hover:scale-[1.02]
-  active:scale-95
-  transition-all duration-300"
+          className="w-full mt-2 bg-linear-to-r from-emerald-500 to-teal-600 text-white font-semibold text-lg py-3 rounded-2xl shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 transition-all duration-300"
         >
           Back
         </button>

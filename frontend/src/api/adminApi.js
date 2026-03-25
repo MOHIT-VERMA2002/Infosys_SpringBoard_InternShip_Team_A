@@ -30,7 +30,6 @@ export const getDashboardStats = async () => {
 export const getDashboard = async () => {
   try {
     const res = await api.get("/admin/getDashboard");
-     console.log(res.data);
     return res.data;
   } catch (error) {
     throw error.response?.data || { message: "Failed to fetch dashboard" };
@@ -40,8 +39,6 @@ export const getDashboard = async () => {
 export const createParking = async (data) => {
   try {
     const res = await api.post("/admin/parking", data);
-    console.log(data);
-     console.log(res.data);
     return res.data;
   } catch (error) {
     throw error.response?.data || { message: "Failed to create parking" };
@@ -51,7 +48,6 @@ export const createParking = async (data) => {
 export const updateParking = async (id, data) => {
   try {
     const res = await api.put(`/admin/parking/${id}`, data);
-     console.log(res.data);
     return res.data;
   } catch (error) {
     throw error.response?.data || { message: "Failed to update parking" };
@@ -69,7 +65,6 @@ export const deleteParking = async (id) => {
 export const getAllParkings = async () => {
   try {
     const res = await api.get("/admin/parkings");
-     console.log(res.data);
     return res.data;
   } catch (error) {
     throw error.response?.data || { message: "Failed to fetch parkings" };
@@ -79,7 +74,6 @@ export const getAllParkings = async () => {
 export const getParkingById = async (id) => {
   try {
     const res = await api.get(`/admin/parking/${id}`);
-     console.log(res.data);
     return res.data;
   } catch (error) {
     throw error.response?.data || { message: "Failed to fetch parking" };
@@ -89,7 +83,6 @@ export const getParkingById = async (id) => {
 export const getAllUsers = async () => {
   try {
     const res = await api.get("/admin/allUserDetails");
-     console.log(res.data);
     return res.data;
   } catch (error) {
     throw error.response?.data || { message: "Failed to fetch users" };
@@ -99,7 +92,6 @@ export const getAllUsers = async () => {
 export const getUserDetails = async (customId) => {
   try {
     const res = await api.get(`/admin/user/${customId}`);
-     console.log(res.data);
     return res.data;
   } catch (error) {
     throw error.response?.data || { message: "Failed to fetch user" };
@@ -109,7 +101,6 @@ export const getUserDetails = async (customId) => {
 export const getTodayBookings = async () => {
   try {
     const res = await api.get("/admin/bookings/today");
-     console.log(res.data);
     return res.data;
   } catch (error) {
     throw error.response?.data || { message: "Failed to fetch bookings" };

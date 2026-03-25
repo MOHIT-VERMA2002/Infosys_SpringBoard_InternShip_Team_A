@@ -8,7 +8,6 @@ const api = axios.create({
   },
 });
 
-
 export const login = async (data) => {
   try {
     const res = await api.post("/auth/login", data);
@@ -18,7 +17,6 @@ export const login = async (data) => {
   }
 };
 
-
 export const signup = async (data) => {
   try {
     const res = await api.post("/auth/signup", data);
@@ -26,8 +24,4 @@ export const signup = async (data) => {
   } catch (error) {
     throw error.response?.data || { message: "Signup failed" };
   }
-};
-
-export const logout = () => {
-  localStorage.removeItem("token");
 };

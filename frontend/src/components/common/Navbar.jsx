@@ -1,6 +1,12 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
-import { FaUserCircle, FaChevronDown, FaBars, FaTimes } from "react-icons/fa";
+import {
+  FaUserCircle,
+  FaChevronDown,
+  FaBars,
+  FaTimes,
+  FaUserShield,
+} from "react-icons/fa";
 
 const Navbar = () => {
   const isLoggedIn = true;
@@ -10,6 +16,20 @@ const Navbar = () => {
 
   const navigate = useNavigate();
   const dropdownRef = useRef(null);
+
+  // ✅ JWT ROLE CHECK
+  const token = localStorage.getItem("jwt");
+
+  let isAdmin = false;
+
+  if (token) {
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      isAdmin = payload?.role === "ADMIN";
+    } catch (err) {
+      console.error("Invalid token");
+    }
+  }
 
   const navItems = [
     { name: "Home", path: "/" },
@@ -23,6 +43,7 @@ const Navbar = () => {
   const handleLogout = () => {
     setOpen(false);
     setMobileMenu(false);
+    localStorage.removeItem("token"); // optional cleanup
     navigate("/login");
   };
 
@@ -124,6 +145,20 @@ const Navbar = () => {
                 💳 Payment History
               </button>
 
+              {/* ✅ ADMIN BUTTON (ONLY IF ADMIN) */}
+              {true && (
+                <button
+                  onClick={() => {
+                    navigate("/admin");
+                    setOpen(false);
+                  }}
+                  className="w-full flex items-center gap-2 px-4 py-3 hover:bg-gray-100 font-medium  transition"
+                >
+                  <FaUserShield />
+                  Switch to Admin Panel
+                </button>
+              )}
+
               <div className="border-t"></div>
 
               <button
@@ -176,6 +211,17 @@ const Navbar = () => {
               >
                 Payment History
               </NavLink>
+
+              {/* ✅ OPTIONAL: ADMIN IN MOBILE */}
+              {isAdmin && (
+                <NavLink
+                  to="/admin"
+                  onClick={() => setMobileMenu(false)}
+                  className="block text-lg border-b border-white/20 pb-2 text-purple-400"
+                >
+                  Admin Panel
+                </NavLink>
+              )}
 
               <button
                 onClick={handleLogout}

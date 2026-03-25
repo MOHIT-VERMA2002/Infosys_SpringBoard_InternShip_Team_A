@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import MainLayout from "./layouts/MainLayout";
 
 import Login from "./pages/Login";
@@ -9,21 +9,19 @@ import ParkingStatus from "./pages/ParkingStatus";
 import MyBooking from "./pages/MyBooking";
 import BookingConfirm from "./pages/BookingConfirm";
 import Profile from "./pages/Profile";
-import { useAuth } from "./context/AuthContext";
 import Help from "./pages/Help";
 import Feedback from "./pages/Feedback";
-import WhyChoose from './pages/WhyChoose.jsx';
-import FAQ from './pages/FAQ.jsx';
+import WhyChoose from "./pages/WhyChoose";
+import FAQ from "./pages/FAQ";
 import ForgotPassword from "./pages/ForgotPassword";
 import Features from "./pages/Features";
 import About from "./pages/About";
 import Payment from "./pages/Payment";
 import PaymentHistory from "./pages/PaymentHistory";
-import ParkingRates from './pages/ParkingRates';
+import ParkingRates from "./pages/ParkingRates";
 import Services from "./pages/Services";
 import TopReviews from "./pages/TopReviews";
-import Contact from "./pages/Contact"
-
+import Contact from "./pages/Contact";
 
 import AdminProfile from "./Admin/profile/AdminProfile";
 import Dashboard from "./Admin/Dashboard/Dashboard";
@@ -31,31 +29,28 @@ import ManageParking from "./Admin/ManageParking/ManageParking";
 import ManageUsers from "./Admin/ManageUser/MangeUser";
 import ManageBookings from "./Admin/ManageBooking/ManageBooking";
 import Reports from "./Admin/Report/Repots";
+import ProtectedRoute from "./routes/ProtectedRoute";
 
-
-const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated } = useAuth();
-  return isAuthenticated ? children : <Navigate to="/login" />;
-};
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Admin Routes */}
-        <Route path="/admin" element={<Dashboard />} />
-        <Route path="/admin/parking" element={<ManageParking />} />
-        <Route path="/admin/users" element={<ManageUsers/>} />
-        <Route path="/admin/bookings" element={<ManageBookings />} />
-        <Route path="/admin/reports" element={<Reports />} />
-        <Route path="/admin/profile" element={<AdminProfile />} />
 
         {/* PUBLIC */}
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
 
-        {/* PROTECTED WITH MAIN LAYOUT */}
+        {/* ADMIN */}
+        <Route path="/admin" element={<Dashboard />} />
+        <Route path="/admin/parking" element={<ManageParking />} />
+        <Route path="/admin/users" element={<ManageUsers />} />
+        <Route path="/admin/bookings" element={<ManageBookings />} />
+        <Route path="/admin/reports" element={<Reports />} />
+        <Route path="/admin/profile" element={<AdminProfile />} />
+
+        {/* PROTECTED */}
         <Route
           element={
             <ProtectedRoute>
@@ -81,7 +76,6 @@ function App() {
           <Route path="/services" element={<Services />} />
           <Route path="/top-reviews" element={<TopReviews />} />
           <Route path="/contact" element={<Contact />} />
-
         </Route>
 
       </Routes>

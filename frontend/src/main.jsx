@@ -5,13 +5,16 @@ import "./index.css";
 import App from "./App.jsx";
 import { AuthProvider } from "./context/AuthContext";
 import { DashboardProvider } from "./context/DashboardContext";
+import { ParkingUserProvider } from "./context/ParkingUserContext";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <AuthProvider>
-  <DashboardProvider>
-    <App />
-  </DashboardProvider>
-</AuthProvider>
+      <DashboardProvider>
+        <ParkingUserProvider>
+          <App />
+        </ParkingUserProvider>
+      </DashboardProvider>
+    </AuthProvider>
   </StrictMode>
 );

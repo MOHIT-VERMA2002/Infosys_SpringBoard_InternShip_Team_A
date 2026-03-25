@@ -1,20 +1,26 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import * as authApi from "../api/authApi";
+
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(null); 
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-  const token = localStorage.getItem("jwt");
+    const token = localStorage.getItem("jwt");
 
-  if (token) {
-    setIsAuthenticated(true);
-  }
-}, []);
+    if (token) {
+      setIsAuthenticated(true);
+      setUser({ id: "persisted-user" });
+    } else {
+      setIsAuthenticated(false);
+    }
+
+    setLoading(false);
+  }, []);
 
   const login = async (formData) => {
     setLoading(true);
@@ -25,10 +31,7 @@ export const AuthProvider = ({ children }) => {
 
       localStorage.setItem("jwt", data.jwt);
 
-      setUser({
-        id: data.id,
-      });
-
+      setUser({ id: data.id });
       setIsAuthenticated(true);
 
       return { success: true };
