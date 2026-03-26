@@ -114,7 +114,7 @@ const Navbar = () => {
 
           {/* PROFILE DROPDOWN */}
           {open && (
-            <div className="absolute right-0 top-12 w-60 bg-white rounded-xl shadow-xl text-gray-800 border overflow-hidden">
+            <div className="absolute right-0 top-12 w-60 z-9999 bg-white rounded-xl shadow-xl text-gray-800 border overflow-hidden">
               <button
                 onClick={() => {
                   navigate("/profile");
@@ -144,8 +144,6 @@ const Navbar = () => {
               >
                 💳 Payment History
               </button>
-
-              {/* ✅ ADMIN BUTTON (ONLY IF ADMIN) */}
               {true && (
                 <button
                   onClick={() => {

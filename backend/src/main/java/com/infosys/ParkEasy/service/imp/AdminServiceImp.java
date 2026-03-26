@@ -5,6 +5,7 @@ import com.infosys.ParkEasy.dto.Request.FloorRequestDto;
 import com.infosys.ParkEasy.dto.Request.ParkingRequestDto;
 import com.infosys.ParkEasy.entity.*;
 import com.infosys.ParkEasy.entity.type.BookingType;
+import com.infosys.ParkEasy.entity.type.RoleType;
 import com.infosys.ParkEasy.entity.type.SlotType;
 import com.infosys.ParkEasy.entity.type.SpotStatus;
 import com.infosys.ParkEasy.repository.*;
@@ -220,20 +221,76 @@ public class AdminServiceImp implements AdminService {
         dto.setTotalSpent(total);
         return dto;
     }
-
     @Override
     public ResponseEntity<List<ManageUserResponseDto>> getAllUserDetails() {
+
         List<User> users = userRepository.findAll();
+
         List<ManageUserResponseDto> response = users.stream().map(user -> {
+
             ManageUserResponseDto dto = new ManageUserResponseDto();
+
             dto.setCustomId(user.getCustomId());
             dto.setName(user.getName());
             dto.setPhone(user.getPhone());
             dto.setUserStatusType(user.getStatusType());
-            dto.setVehicle(user.getVehicles().stream().findFirst().map(Vehicle::getVehicleNumber).orElse(null));
-            dto.setCityName(user.getAddresses().stream().findFirst().map(Address::getCity).orElse(null));
+
+            String vehicle = user.getVehicles() != null && !user.getVehicles().isEmpty()
+                    ? user.getVehicles().iterator().next().getVehicleNumber()
+                    : "-";
+            dto.setVehicle(vehicle);
+
+            String city = user.getAddresses() != null && !user.getAddresses().isEmpty()
+                    ? user.getAddresses().iterator().next().getCity()
+                    : "-";
+            dto.setCityName(city);
+
+            BookingResponseDto lastBooking;
+
+            if (user.getBookings() != null && !user.getBookings().isEmpty()) {
+
+                PaymentOrder latest = user.getBookings().stream()
+                        .max(java.util.Comparator.comparing(PaymentOrder::getCreatedAt))
+                        .orElse(null);
+
+                Booking booking = latest.getBooking(); // 🔥 IMPORTANT
+
+                lastBooking = BookingResponseDto.builder()
+                        .bookingId(booking.getBookingId())
+                        .name(booking.getName())
+                        .phone(booking.getPhone())
+                        .vehicleNumber(booking.getVehicleNumber())
+                        .parkingId(booking.getParkingId())
+                        .amount(latest.getAmount())
+                        .startTime(booking.getStartTime())
+                        .endTime(booking.getEndTime())
+                        .spotNumber(booking.getSpotNumber())
+                        .floorName(booking.getFloorName())
+                        .slotType(booking.getSlotType())
+                        .status(booking.getStatus())
+                        .createdAt(booking.getCreatedAt())
+                        .build();
+
+            } else {
+
+                lastBooking = BookingResponseDto.builder()
+                        .bookingId("-")
+                        .amount(0.0)
+                        .spotNumber("-")
+                        .floorName("-")
+                        .build();
+            }
+
+            dto.setLastBooking(lastBooking);
+
+            dto.setTotalBooking(String.valueOf(
+                    user.getBookings() != null ? user.getBookings().size() : 0
+            ));
+
             return dto;
+
         }).toList();
+
         return ResponseEntity.ok(response);
     }
 
@@ -335,5 +392,21 @@ public class AdminServiceImp implements AdminService {
         }
 
         return dto;
+    }
+
+    @Override
+    public String registerNewAdmin(String email) {
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User Not found"));
+        if (user.getRoleTypes().contains(RoleType.ADMIN)) {
+            return "⚠ User is already an ADMIN";
+        }
+        user.getRoleTypes().add(RoleType.ADMIN);
+        String part1 = UUID.randomUUID().toString().substring(0, 4).toUpperCase();
+        String part2 = UUID.randomUUID().toString().substring(0, 4).toUpperCase();
+        user.setCustomId("ADMIN-" + part1 + "-" + part2);
+        userRepository.save(user);
+        return " User upgraded to ADMIN successfully";
     }
 }

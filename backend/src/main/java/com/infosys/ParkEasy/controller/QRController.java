@@ -4,10 +4,7 @@ import com.infosys.ParkEasy.entity.Booking;
 import com.infosys.ParkEasy.repository.BookingRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
@@ -17,14 +14,15 @@ import static java.util.Map.entry;
 @RequestMapping("/booking")
 @RequiredArgsConstructor
 public class QRController {
-    private final BookingRepository bookingRepository;
 
+    private final BookingRepository bookingRepository;
 
     @GetMapping("/{bookingId}/qr")
     public ResponseEntity<?> getQrCode(@PathVariable String bookingId){
-
         Booking booking = bookingRepository
-                .findByBookingId(bookingId)
+                .findAllByBookingId(bookingId)
+                .stream()
+                .findFirst()
                 .orElseThrow(() -> new RuntimeException("Booking not found"));
 
         if(booking.getQrCode() == null){
@@ -38,7 +36,6 @@ public class QRController {
                         entry("phone", booking.getPhone()),
                         entry("vehicle", booking.getVehicleNumber()),
 
-                        // ✅ NULL SAFE
                         entry("paymentId", booking.getPaymentId() != null ? booking.getPaymentId() : ""),
                         entry("status", booking.getStatus() != null ? booking.getStatus().toString() : ""),
 

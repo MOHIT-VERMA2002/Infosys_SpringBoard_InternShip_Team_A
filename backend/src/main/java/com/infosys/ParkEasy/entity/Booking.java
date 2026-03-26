@@ -21,6 +21,7 @@ public class Booking {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(unique = true, nullable = false, updatable = false)
     private String bookingId;
 
     private String name;
@@ -44,16 +45,20 @@ public class Booking {
 
     @CreationTimestamp
     private LocalDateTime createdAt;
+
     @Column(columnDefinition = "TEXT")
     private String qrCode;
+
     @ManyToOne
     @JoinColumn(name = "parking_spot_id")
     private ParkingSpot parkingSpot;
 
     private String spotNumber;
     private String floorName;
+
     @Enumerated(EnumType.STRING)
     private SlotType slotType;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="user_id")
     @JsonIgnore

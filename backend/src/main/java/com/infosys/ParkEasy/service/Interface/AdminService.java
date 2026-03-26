@@ -21,4 +21,6 @@ public interface AdminService {
     List<ParkingBookingResponseDto> getTodayBookings();
 
     AdminProfileResponseDto getProfile();
+
+    String registerNewAdmin(String email);
 }

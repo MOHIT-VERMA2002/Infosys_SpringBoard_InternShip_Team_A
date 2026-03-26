@@ -9,8 +9,7 @@ const MyBooking = () => {
   const [bookings, setBookings] = useState([]);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
-  console.log(bookings);
-
+ 
   useEffect(() => {
     const fetchBookings = async () => {
       try {
@@ -24,13 +23,13 @@ const MyBooking = () => {
           address: b.parkingAddress || "",
 
           parkingId: b.parkingId || "",
-          parkingCity: b.parkingCity || "", // ✅ ADD
+          parkingCity: b.parkingCity || "", 
           vehicleNumber: b.vehicleNumber || "",
           phone: b.phone || "",
           amount: b.amount || 0,
 
-          spotNumber: b.spotNumber || "", // ✅ ADD
-          floorName: b.floorName || "", // ✅ ADD
+          spotNumber: b.spotNumber || "",
+          floorName: b.floorName || "", 
 
           startDate: b.startTime,
           endDate: b.endTime,

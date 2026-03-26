@@ -256,7 +256,7 @@ const handleContinueToPayment = async () => {
   return (
     <div className="flex h-[calc(100vh-75px)] mx-auto px-4 overflow-hidden bg-gray-100">
       <div className="flex-1 relative h-full">
-        <div className="absolute top-6 left-6 z-1000 w-full max-w-145">
+        <div className="absolute top-6 left-6 z-10 w-full max-w-145">
           <div className="border-3 border-blue-400 rounded-xl shadow-md">
             <div className="bg-white rounded-lg flex items-stretch overflow-hidden">
               <div className="relative flex-1">

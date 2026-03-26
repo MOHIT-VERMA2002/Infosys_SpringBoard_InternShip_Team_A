@@ -4,16 +4,15 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.infosys.ParkEasy.entity.type.RoleType;
 import com.infosys.ParkEasy.entity.type.UserStatusType;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+@Builder
 @Entity
 @Getter
 @Setter
@@ -37,26 +36,26 @@ public class User {
     @Column(unique = true)
     private String phone;
 
-    @Column(name = "full_name", nullable =false)
+    @Column(name = "full_name", nullable = false)
     private String name;
 
     @Enumerated(EnumType.STRING)
     private UserStatusType statusType;
 
+    @Builder.Default
     @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(name = "user_roles",joinColumns = @JoinColumn(name = "user_id"))
+    @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
     @Enumerated(EnumType.STRING)
     @Column(name = "role")
     private Set<RoleType> roleTypes = new HashSet<>();
 
-    private Double walletBalance = 0.0;
-    private Integer loyaltyPoints = 0;
-
-    @OneToMany(mappedBy = "user",cascade = CascadeType.ALL,orphanRemoval = true)
+    @Builder.Default
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     private Set<Address> addresses = new HashSet<>();
 
-    @OneToMany(mappedBy = "user",cascade = CascadeType.ALL,orphanRemoval = true)
+    @Builder.Default
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     private Set<Vehicle> vehicles = new HashSet<>();
 

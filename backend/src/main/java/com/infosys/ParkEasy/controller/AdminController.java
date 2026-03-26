@@ -4,11 +4,13 @@ import com.infosys.ParkEasy.dto.Reponse.*;
 import com.infosys.ParkEasy.dto.Request.ParkingRequestDto;
 import com.infosys.ParkEasy.entity.Parking;
 
+import com.infosys.ParkEasy.entity.User;
 import com.infosys.ParkEasy.service.Interface.AdminService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.stereotype.Repository;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -75,4 +77,12 @@ public class AdminController {
     public ResponseEntity<AdminProfileResponseDto> getProfile(){
        return ResponseEntity.ok(adminService.getProfile());
     }
+
+    @PostMapping("/registerNewAdmin")
+    public ResponseEntity<String> registerNewAdmin(@RequestBody String email) {
+        email = email.replace("\"", "").trim();
+        return ResponseEntity.ok(adminService.registerNewAdmin(email));
+    }
+
+
 }

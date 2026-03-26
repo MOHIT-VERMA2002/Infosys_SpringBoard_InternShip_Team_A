@@ -16,6 +16,7 @@ export default function ManageBookings() {
   const [search, setSearch] = useState("");
   const [toast, setToast] = useState("");
   const [page, setPage] = useState(1);
+  console.log(bookings)
 
   const itemsPerPage = 8;
 
@@ -25,13 +26,13 @@ export default function ManageBookings() {
         const res = await getTodayBookings();
 
         const mapped = res.map((b, i) => ({
-          id: b.customId || i,
+          id: `${b.customId}-${i}`,
           customId: b.customId || "-",
           user: b.user || "-",
           parking: b.parking || "-",
           slot: b.slot || "-",
           car: b.car || "-",
-          date: b.date ? new Date(b.date).toLocaleString() : "-", // ✅ FIX
+          date: b.date ? new Date(b.date).toLocaleString() : "-", 
           status: b.status || "PENDING",
           amount: b.amount || 0
         }));

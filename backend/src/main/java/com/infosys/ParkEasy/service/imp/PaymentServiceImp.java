@@ -74,7 +74,7 @@ public class PaymentServiceImp implements PaymentService {
                 .evStation(dto.isEvStation())
                 .status(BookingStatus.PENDING)
                 .user(user)
-                .bookingId(user.getCustomId())
+                .bookingId(receipt)
                 .build();
 
         bookingRepository.save(booking);

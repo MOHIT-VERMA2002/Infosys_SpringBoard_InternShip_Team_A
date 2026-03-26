@@ -83,6 +83,8 @@ export const getParkingById = async (id) => {
 export const getAllUsers = async () => {
   try {
     const res = await api.get("/admin/allUserDetails");
+    
+    console.log(res.data)
     return res.data;
   } catch (error) {
     throw error.response?.data || { message: "Failed to fetch users" };
@@ -112,5 +114,13 @@ export const getAdminProfile = async () => {
     return res.data;
   } catch (error) {
     throw error.response?.data || { message: "Failed to fetch profile" };
+  }
+};
+export const makeAdmin = async (email) => {
+  try {
+    const res = await api.post("/admin/registerNewAdmin", email); 
+    return res.data;
+  } catch (error) {
+    throw error.response?.data || { message: "Failed to register admin" };
   }
 };
